@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>דוד ויוני התקנות ותיקונים | מחשבון מזגנים מוסמך דרג 3</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --primary-light: #e0f2fe;
+      --secondary: #10b981;
+      --secondary-dark: #059669;
+      --dark: #0f172a;
+      --light: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #334155;
+      --text-muted: #64748b;
+      --radius: 16px;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Assistant';
+    }
+
+    body {
+      background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 16px 12px 60px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .badge-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #0284c7;
+      color: #ffffff;
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 10px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0c4a6e;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .header p {
+      color: var(--text-muted);
+      font-size: 15.5px;
+    }
+
+    .trust-banner {
+      background: #ecfdf5;
+      border: 1.5px solid #6ee7b7;
+      color: #065f46;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .trust-banner-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: #047857;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .trust-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .trust-badge-item {
+      font-size: 12.5px;
+      background: white;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .client-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 540px) {
+      .client-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .ac-unit {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .ac-unit:hover {
+      border-color: #cbd5e1;
+    }
+
+    .ac-unit-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed #cbd5e1;
+    }
+
+    .unit-number {
+      font-weight: 800;
+      color: var(--primary-dark);
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-remove {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: none;
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-remove:hover {
+      background: #fecaca;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 540px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .help-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    select, input[type="number"], input[type="text"], input[type="email"], input[type="tel"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1.5px solid #cbd5e1;
+      font-size: 14.5px;
+      background: white;
+      color: var(--dark);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1.5px solid #e2e8f0;
+      background: white;
+      cursor: pointer;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #334155;
+      transition: all 0.2s;
+    }
+
+    .radio-label:hover {
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+
+    .radio-label.active {
+      border-color: var(--primary);
+      background: #f0f9ff;
+      color: var(--primary-dark);
+    }
+
+    .btn-add {
+      width: 100%;
+      padding: 13px;
+      background: #f0f9ff;
+      border: 2px dashed #0284c7;
+      color: var(--primary-dark);
+      border-radius: 12px;
+      font-size: 15.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-add:hover {
+      background: #e0f2fe;
+      border-color: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    /* Settings Collapsible */
+    
+
+    
+
+    .btn-settings:hover {
+      color: #334155;
+    }
+
+    
+
+    
+
+    
+
+    /* Summary Card */
+    .summary-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      border: 1.5px solid #bfdbfe;
+      padding: 22px;
+      margin-top: 10px;
+    }
+
+    .summary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 14px;
+      border-bottom: 1.5px solid #f1f5f9;
+      margin-bottom: 14px;
+    }
+
+    .total-title {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .total-price {
+      font-size: 34px;
+      font-weight: 800;
+      color: #0369a1;
+    }
+
+    .promo-badge-box {
+      background: #f0fdf4;
+      border: 1px dashed #22c55e;
+      border-radius: 10px;
+      padding: 9px 13px;
+      margin-bottom: 16px;
+      font-size: 13.5px;
+      color: #15803d;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .breakdown-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .breakdown-item {
+      display: flex;
+      justify-content: space-between;
+      color: #1e293b;
+    }
+
+    .breakdown-item.sub {
+      color: #64748b;
+      padding-right: 12px;
+      font-size: 13px;
+    }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 500px) {
+      .actions-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .btn-action-primary {
+      width: 100%;
+      background: #25d366;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+      transition: all 0.2s;
+    }
+
+    .btn-action-primary:hover {
+      background: #1eb954;
+      transform: translateY(-1px);
+    }
+
+    .btn-action-email {
+      width: 100%;
+      background: #0284c7;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3);
+      transition: all 0.2s;
+    }
+
+    .btn-action-email:hover {
+      background: #0369a1;
+      transform: translateY(-1px);
+    }
+
+    .secondary-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn-secondary {
+      flex: 1;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+
+    .toast-notice {
+      display: none;
+      background: #10b981;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    .disclaimer {
+      font-size: 12.5px;
+      color: #64748b;
+      text-align: center;
+      margin-top: 14px;
+      line-height: 1.6;
+    }
+
+    /* Modal Overlay & Box for Email */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: white;
+      border-radius: 18px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+      padding: 24px;
+      position: relative;
+      animation: modalFadeIn 0.2s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: #f1f5f9;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+    }
+
+    .modal-close:hover {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+
+    .modal-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: #0c4a6e;
+      margin-bottom: 4px;
+    }
+
+    .modal-subtitle {
+      font-size: 13.5px;
+      color: #64748b;
+      margin-bottom: 18px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-modal-opt {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1.5px solid #e2e8f0;
+      background: #f8fafc;
+      cursor: pointer;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #1e293b;
+      text-align: right;
+      transition: all 0.2s;
+      text-decoration: none;
+      width: 100%;
+    }
+
+    .btn-modal-opt:hover {
+      border-color: #0284c7;
+      background: #f0f9ff;
+      color: #0369a1;
+      transform: translateY(-1px);
+    }
+
+    .btn-modal-opt .opt-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .btn-modal-opt .opt-text-primary {
+      font-size: 15px;
+      font-weight: 800;
+      display: block;
+    }
+
+    .btn-modal-opt .opt-text-sub {
+      font-size: 12px;
+      font-weight: 500;
+      color: #64748b;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .modal-target-email {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: #f1f5f9;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #475569;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    @media print {
+      body { background: white; padding: 0; }
+      .btn-add, .settings-toggle, .actions-grid, .secondary-actions, .btn-remove, .modal-overlay { display: none !important; }
+      .card, .summary-card { box-shadow: none; border: 1px solid #ccc; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="badge-tag">❄️ דוד ויוני — מוסמכי דרג 3 בהתקנות מזגנים | המחירים הכי טובים בהתחייבות!</div>
+    <h1>דוד ויוני התקנות ותיקונים</h1>
+    <p>מחשבון עלויות והצעת מחיר מדויקת להתקנת מזגנים מכל הסוגים</p>
+  </div>
+
+  <div class="trust-banner">
+    <div class="trust-banner-title">
+      <span>🥇</span> דוד ויוני עובדים יחד ולשניהם יש דרג 3 של התקנות מזגנים והמחירים הכי טובים בהתחייבות!
+    </div>
+    <div class="trust-badges">
+      <span class="trust-badge-item">🛡️ אחריות מלאה 5-7 שנים תלוי בחברת מזגנים</span>
+      <span class="trust-badge-item">🏷️ מחירים מוזלים למי שעושה גם התקנה</span>
+    </div>
+  </div>
+
+  <!-- Client Details -->
+  <div class="card">
+    <div class="section-title">
+      <span>👤</span> פרטי הלקוח ומיקום ההתקנה
+    </div>
+    <div class="client-grid">
+      <div class="form-group">
+        <label>שם מלא / איש קשר:</label>
+        <input type="text" id="client-name" placeholder="לדוגמה: אברהם כהן" oninput="calculateTotal()">
+      </div>
+      <div class="form-group">
+        <label>טלפון ליצירת קשר:</label>
+        <input type="tel" id="client-phone" placeholder="לדוגמה: 050-1234567" oninput="calculateTotal()">
+      </div>
+      <div class="form-group">
+        <label>עיר / יישוב:</label>
+        <input type="text" id="client-city" placeholder="לדוגמה: בני ברק / ירושלים / אלעד" oninput="calculateTotal()">
+      </div>
+      <div class="form-group">
+        <label>כתובת אימייל (לשליחת הצעה למייל):</label>
+        <input type="email" id="client-email" placeholder="לדוגמה: user@example.com" oninput="calculateTotal()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Units List -->
+  <div class="card">
+    <div class="section-title">
+      <span>📋</span> רשימת מזגנים להתקנה
+    </div>
+    
+    <div id="units-container"></div>
+
+    <button type="button" class="btn-add" id="add-unit-btn">
+      <span>➕</span> הוספת מזגן נוסף לחישוב
+    </button>
+  </div>
+
+  
+  <!-- AC Package Deal Toggle -->
+  <div class="card package-deal-card" style="border: 2px solid #0284c7; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); margin-bottom: 24px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+      <div style="flex:1; min-width:240px;">
+        <div style="font-size:16px; font-weight:800; color:#0369a1; display:flex; align-items:center; gap:8px;">
+          <span>📦</span> חבילת רכישת מזגן + התקנה (הכי זול בישראל)
+        </div>
+        <div style="font-size:13.5px; color:#334155; margin-top:4px; line-height:1.4;">
+          רוכשים את המזגן דרך דוד ויוני? <strong>קבלו הנחה של 50 ₪ על עלות ההתקנה לכל מזגן!</strong>
+        </div>
+      </div>
+      <div>
+        <label class="switch-container" style="display:inline-flex; align-items:center; gap:10px; cursor:pointer; background:#fff; padding:10px 18px; border-radius:50px; border:2px solid #0284c7; box-shadow:0 2px 8px rgba(2,132,199,0.15);">
+          <input type="checkbox" id="buy-ac-toggle" checked onchange="calculateTotal()" style="width:20px; height:20px; cursor:pointer; accent-color:#0284c7;">
+          <span style="font-weight:700; font-size:14.5px; color:#0f172a;" id="toggle-label-text">✅ כולל רכישת מזגן (מחיר מוזל)</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Box -->
+  <div class="summary-card">
+    <div class="summary-header">
+      <div>
+        <div class="total-title">סה&quot;כ משוער להזמנה</div>
+        <div style="font-size:13.5px; color:var(--primary-dark); font-weight:700;" id="units-count-text">1 מזגן בחישוב</div>
+      </div>
+      <div class="total-price" id="total-display">0 ₪</div>
+    </div>
+
+    <div class="promo-badge-box">
+      <span>🏷️ קוד הטבה / אסמכתא: DZ-8810</span>
+      <span style="font-size:12px; font-weight:600; color:#166534;">מחירים מוזלים למזמינים התקנה</span>
+    </div>
+
+    <div class="breakdown-list" id="breakdown-container">
+      <!-- dynamic items -->
+    </div>
+
+    <!-- Actions for WhatsApp and Email -->
+    <div class="actions-grid">
+      <button type="button" class="btn-action-primary" id="whatsapp-share-btn">
+        <span>💬</span> שליחה לוואטסאפ (דוד ויוני)
+      </button>
+      <button type="button" class="btn-action-email" id="email-share-btn">
+        <span>✉️</span> שליחת הצעה במייל (פתיחה מהירה)
+      </button>
+    </div>
+
+    <div class="secondary-actions">
+      <button type="button" class="btn-secondary" id="copy-summary-btn">
+        <span>📋</span> העתקת סיכום מלא
+      </button>
+      <button type="button" class="btn-secondary" onclick="window.print()">
+        <span>🖨️</span> הדפסה / PDF
+      </button>
+    </div>
+
+    <div class="toast-notice" id="toast-notice">הסיכום הועתק ללוח בהצלחה!</div>
+    
+    <div class="disclaimer">
+      * התקנה בסיסית כוללת 2 מטר צנרת ותושבת מנוע קיר סטנדרטית.<br>
+      <span style="color:#b45309; font-weight:700;">⚠️ שימו לב: עבודות חציבה אינן כוללות סגירה ושפכטל.</span><br>
+      <strong>דוד ויוני התקנות ותיקונים</strong> — דוד ויוני עובדים יחד ולשניהם יש דרג 3 של התקנות מזגנים והמחירים הכי טובים בהתחייבות.<br>
+      🛡️ אחריות מלאה 5-7 שנים תלוי בחברת מזגנים | 🏷️ מחירים מוזלים למי שעושה גם התקנה
+    </div>
+  </div>
+</div>
+
+<!-- Email Modal Options -->
+<div class="modal-overlay" id="email-modal-overlay">
+  <div class="modal-box">
+    <button type="button" class="modal-close" id="modal-close-btn">&times;</button>
+    <div class="modal-title">✉️ שליחת הצעת המחיר במייל</div>
+    <div class="modal-subtitle">בחרו את הדרך הנוחה לכם לפתיחת המייל ושליחת ההצעה:</div>
+    
+    <div class="modal-buttons">
+      <button type="button" class="btn-modal-opt" id="btn-open-gmail">
+        <span class="opt-icon">📧</span>
+        <div>
+          <span class="opt-text-primary">פתיחה ישירה ב-Gmail Webmail</span>
+          <span class="opt-text-sub">מומלץ למחשב, אנדרואיד ודפדפן Chrome (פותח ישירות חלון כתיבה)</span>
+        </div>
+      </button>
+
+      <button type="button" class="btn-modal-opt" id="btn-open-mailto">
+        <span class="opt-icon">📱</span>
+        <div>
+          <span class="opt-text-primary">פתיחה באפליקציית דואר במכשיר (Mailto)</span>
+          <span class="opt-text-sub">פותח את אפליקציית ברירת המחדל (Outlook, Apple Mail וכו')</span>
+        </div>
+      </button>
+
+      <button type="button" class="btn-modal-opt" id="btn-modal-copy">
+        <span class="opt-icon">📋</span>
+        <div>
+          <span class="opt-text-primary">העתקת פרטי ההצעה וכתובת המייל</span>
+          <span class="opt-text-sub">מעתיק ללוח לשליחה מכל שירות מייל אחר (וואלה, יאהו ועוד)</span>
+        </div>
+      </button>
+    </div>
+
+    <div class="modal-target-email">
+      <span>כתובת היעד: <strong id="modal-display-email">dzadok24@gmail.com</strong></span>
+      <span>קוד אסמכתא: <strong>DZ-8810</strong></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  var DEFAULT_INSTALLER_PHONE = '050-446-7885';
+  var DEFAULT_INSTALLER_EMAIL = 'dzadok24@gmail.com';
+  var REFERRAL_CODE = 'DZ-8810';
+
+  var savedPhone = localStorage.getItem('ac_installer_phone');
+  if (!savedPhone || savedPhone === '0504148810') {
+    savedPhone = DEFAULT_INSTALLER_PHONE;
+    localStorage.setItem('ac_installer_phone', savedPhone);
+  }
+  var phoneInput = document.getElementById('installer-phone');
+  if (phoneInput) phoneInput.value = savedPhone;
+
+  var savedEmail = localStorage.getItem('ac_installer_email');
+  if (!savedEmail || savedEmail === 'zadok8810@gmail.com') {
+    savedEmail = DEFAULT_INSTALLER_EMAIL;
+    localStorage.setItem('ac_installer_email', savedEmail);
+  }
+  var emailInput = document.getElementById('installer-email');
+  if (emailInput) emailInput.value = savedEmail;
+
+  var elInstallerPhone = document.getElementById('installer-phone');
+  if (elInstallerPhone) {
+    elInstallerPhone.addEventListener('change', function() {
+      localStorage.setItem('ac_installer_phone', this.value.trim());
+      calculateTotal();
+    });
+  }
+
+  var elInstallerEmail = document.getElementById('installer-email');
+  if (elInstallerEmail) {
+    elInstallerEmail.addEventListener('change', function() {
+      localStorage.setItem('ac_installer_email', this.value.trim());
+      var displayTarget = document.getElementById('modal-display-email');
+      if (displayTarget) displayTarget.innerText = this.value.trim() || DEFAULT_INSTALLER_EMAIL;
+      calculateTotal();
+    });
+  }
+
+  var units = [
+    {
+      id: 1,
+      type: '1.0-1.5',
+      mount: 'standard',
+      pipeMeters: 0,
+      mamadDrills: 0,
+      trenchBlocks: 0,
+      trenchConcrete: 0
+    }
+  ];
+
+  var nextUnitId = 2;
+
+  function getAcTypeName(type) {
+    if (type === '1.0-1.5') return 'מזגן עילי 1.0 - 1.5 כ"ס';
+    if (type === '2.0-2.5') return 'מזגן עילי 2.0 - 2.5 כ"ס';
+    if (type === '3.0-3.5') return 'מזגן עילי 3.0 - 3.5 כ"ס';
+    if (type === 'mini') return 'מיני מרכזי 4.5 כ"ס';
+    return 'מזגן עילי 1-1.5 כ"ס';
+  }
+
+  function renderUnits() {
+    var container = document.getElementById('units-container');
+    container.innerHTML = '';
+
+    units.forEach(function(unit, index) {
+      var unitDiv = document.createElement('div');
+      unitDiv.className = 'ac-unit';
+      unitDiv.id = 'unit-card-' + unit.id;
+
+      // Header
+      var headerDiv = document.createElement('div');
+      headerDiv.className = 'ac-unit-header';
+
+      var titleSpan = document.createElement('span');
+      titleSpan.className = 'unit-number';
+      titleSpan.innerText = '❄️ מזגן #' + (index + 1);
+      headerDiv.appendChild(titleSpan);
+
+      if (units.length > 1) {
+        var removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn-remove';
+        removeBtn.innerText = '🗑️ הסר מזגן';
+        removeBtn.onclick = function() { removeUnit(unit.id); };
+        headerDiv.appendChild(removeBtn);
+      }
+      unitDiv.appendChild(headerDiv);
+
+      // Form Grid
+      var formGrid = document.createElement('div');
+      formGrid.className = 'form-grid';
+
+      // Type
+      var typeGroup = document.createElement('div');
+      typeGroup.className = 'form-group full';
+      typeGroup.innerHTML = '<label>סוג וגודל המזגן:</label>';
+      
+      var selectType = document.createElement('select');
+      var types = [
+        { val: '1.0-1.5', label: 'מזגן עילי 1.0 - 1.5 כ"ס (חדר סטנדרטי)' },
+        { val: '2.0-2.5', label: 'מזגן עילי 2.0 - 2.5 כ"ס (סלון / חלל בינוני)' },
+        { val: '3.0-3.5', label: 'מזגן עילי 3.0 - 3.5 כ"ס (חלל גדול)' },
+        { val: 'mini', label: 'מיני מרכזי 4.5 כ"ס (כולל שרשורים ותעלות)' }
+      ];
+      types.forEach(function(t) {
+        var opt = document.createElement('option');
+        opt.value = t.val;
+        opt.innerText = t.label;
+        if (unit.type === t.val) opt.selected = true;
+        selectType.appendChild(opt);
+      });
+      selectType.onchange = function() {
+        unit.type = this.value;
+        calculateTotal();
+      };
+      typeGroup.appendChild(selectType);
+      
+      var typeHint = document.createElement('span');
+      typeHint.className = 'help-hint';
+      typeHint.innerText = 'המחיר הבסיסי כולל 2 מטר צנרת ותושבת מנוע חיצונית';
+      typeGroup.appendChild(typeHint);
+      formGrid.appendChild(typeGroup);
+
+      // Mount
+      var mountGroup = document.createElement('div');
+      mountGroup.className = 'form-group full';
+      mountGroup.innerHTML = '<label>סוג תושבת / מיקום מנוע חיצוני:</label>';
+      
+      var radioGroup = document.createElement('div');
+      radioGroup.className = 'radio-group';
+
+      var mountOptions = [
+        { val: 'standard', label: '🔩 תושבת קיר רגילה למנוע (כלולה בהתקנה בסיסית)' },
+        { val: 'floor', label: '🪵 על הרצפה / גג / מרפסת שירות (ללא עלות תושבת)' },
+        { val: 'flag', label: '🚩 תושבת דגל למעקה / מיקום מיוחד (+110 ₪)' }
+      ];
+
+      mountOptions.forEach(function(opt) {
+        var lbl = document.createElement('label');
+        lbl.className = 'radio-label' + (unit.mount === opt.val ? ' active' : '');
+        
+        var radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'mount-' + unit.id;
+        radio.value = opt.val;
+        radio.checked = (unit.mount === opt.val);
+        radio.onchange = function() {
+          unit.mount = opt.val;
+          renderUnits();
+        };
+
+        var spanText = document.createElement('span');
+        spanText.innerText = opt.label;
+
+        lbl.appendChild(radio);
+        lbl.appendChild(spanText);
+        radioGroup.appendChild(lbl);
+      });
+      mountGroup.appendChild(radioGroup);
+      formGrid.appendChild(mountGroup);
+
+      // Pipe Meters
+      var pipeGroup = document.createElement('div');
+      pipeGroup.className = 'form-group';
+      pipeGroup.innerHTML = '<label>מטרים צנרת צמה נוספת:</label>';
+      var pipeInput = document.createElement('input');
+      pipeInput.type = 'number';
+      pipeInput.min = '0';
+      pipeInput.step = '0.5';
+      pipeInput.value = unit.pipeMeters;
+      pipeInput.placeholder = '0';
+      pipeInput.oninput = function() {
+        unit.pipeMeters = parseFloat(this.value) || 0;
+        calculateTotal();
+      };
+      pipeGroup.appendChild(pipeInput);
+      var pipeHint = document.createElement('span');
+      pipeHint.className = 'help-hint';
+      pipeHint.innerText = 'מעבר ל-2 מטרים הכלולים בבסיס';
+      pipeGroup.appendChild(pipeHint);
+      formGrid.appendChild(pipeGroup);
+
+      // Mamad Drills
+      var mamadGroup = document.createElement('div');
+      mamadGroup.className = 'form-group';
+      mamadGroup.innerHTML = '<label>קידוח ממ"ד (בטון מזוין):</label>';
+      var selectMamad = document.createElement('select');
+      [
+        { val: 0, label: 'ללא קידוח ממ"ד' },
+        { val: 1, label: 'קידוח ממ"ד אחד (כ-190 ₪)' },
+        { val: 2, label: '2 קידוחים בממ"ד' }
+      ].forEach(function(m) {
+        var opt = document.createElement('option');
+        opt.value = m.val;
+        opt.innerText = m.label;
+        if (unit.mamadDrills === m.val) opt.selected = true;
+        selectMamad.appendChild(opt);
+      });
+      selectMamad.onchange = function() {
+        unit.mamadDrills = parseInt(this.value) || 0;
+        calculateTotal();
+      };
+      mamadGroup.appendChild(selectMamad);
+      formGrid.appendChild(mamadGroup);
+
+      // Trench Blocks
+      var trenchBlockGroup = document.createElement('div');
+      trenchBlockGroup.className = 'form-group';
+      trenchBlockGroup.innerHTML = '<label>חציבה בקיר בלוקים (מטר):</label>';
+      var trenchBlockInput = document.createElement('input');
+      trenchBlockInput.type = 'number';
+      trenchBlockInput.min = '0';
+      trenchBlockInput.step = '0.5';
+      trenchBlockInput.value = unit.trenchBlocks;
+      trenchBlockInput.placeholder = '0';
+      trenchBlockInput.oninput = function() {
+        unit.trenchBlocks = parseFloat(this.value) || 0;
+        calculateTotal();
+      };
+      trenchBlockGroup.appendChild(trenchBlockInput);
+      var tbHint = document.createElement('span');
+      tbHint.className = 'help-hint';
+      tbHint.innerText = '100 ₪ למטר (לא כולל סגירה וטיח)';
+      trenchBlockGroup.appendChild(tbHint);
+      formGrid.appendChild(trenchBlockGroup);
+
+      // Trench Concrete
+      var trenchConcreteGroup = document.createElement('div');
+      trenchConcreteGroup.className = 'form-group';
+      trenchConcreteGroup.innerHTML = '<label>חציבה בבטון (מטר):</label>';
+      var trenchConcreteInput = document.createElement('input');
+      trenchConcreteInput.type = 'number';
+      trenchConcreteInput.min = '0';
+      trenchConcreteInput.step = '0.5';
+      trenchConcreteInput.value = unit.trenchConcrete;
+      trenchConcreteInput.placeholder = '0';
+      trenchConcreteInput.oninput = function() {
+        unit.trenchConcrete = parseFloat(this.value) || 0;
+        calculateTotal();
+      };
+      trenchConcreteGroup.appendChild(trenchConcreteInput);
+      var tcHint = document.createElement('span');
+      tcHint.className = 'help-hint';
+      tcHint.innerText = '250 ₪ למטר בטון (לא כולל סגירה)';
+      trenchConcreteGroup.appendChild(tcHint);
+      formGrid.appendChild(trenchConcreteGroup);
+
+      unitDiv.appendChild(formGrid);
+      container.appendChild(unitDiv);
+    });
+
+    calculateTotal();
+  }
+
+  function removeUnit(unitId) {
+    if (units.length <= 1) return;
+    units = units.filter(function(item) { return item.id !== unitId; });
+    renderUnits();
+  }
+
+  document.getElementById('add-unit-btn').addEventListener('click', function() {
+    units.push({
+      id: nextUnitId++,
+      type: '1.0-1.5',
+      mount: 'standard',
+      pipeMeters: 0,
+      mamadDrills: 0,
+      trenchBlocks: 0,
+      trenchConcrete: 0
+    });
+    renderUnits();
+  });
+
+  var currentSummaryText = '';
+  var currentClientName = '';
+
+    function calculateTotal() {
+    var isBuyingAc = document.getElementById('buy-ac-toggle') ? document.getElementById('buy-ac-toggle').checked : true;
+    
+    var toggleLabel = document.getElementById('toggle-label-text');
+    if (toggleLabel) {
+      toggleLabel.innerText = isBuyingAc ? '✅ כולל רכישת מזגן (מחיר מוזל)' : '❌ התקנה בלבד (ללא רכישת מזגן)';
+      toggleLabel.style.color = isBuyingAc ? '#166534' : '#991b1b';
+    }
+
+    // Base 1.0-1.5 stays 550 anchor always
+    var base1 = 550;
+    // Other bases: raised by 50 when NOT buying AC, discount of 50 when buying AC (drops back to original)
+    var base2 = isBuyingAc ? 770 : 820;
+    var base3 = isBuyingAc ? 1050 : 1100;
+    var baseMini = isBuyingAc ? 4500 : 4550;
+
+    var pipeRate1 = 95;
+    var pipeRate2 = 115;
+    
+    // Additions raised by 50
+    var flagBracketRate = 160;
+    var mamadRate = 240;
+    var trenchBlockRate = 150;
+    var trenchConcreteRate = 300;
+
+    var clientName = document.getElementById('client-name').value.trim();
+    var clientPhone = document.getElementById('client-phone').value.trim();
+    var clientCity = document.getElementById('client-city').value.trim();
+    var clientEmail = document.getElementById('client-email').value.trim();
+    currentClientName = clientName;
+
+    var grandTotal = 0;
+    var breakdownHtml = '';
+    
+    var lines = [];
+    lines.push('שלום דוד ויוני, הצעת מחיר ממחשבון המזגנים ❄️');
+    lines.push('*(דוד ויוני עובדים יחד ולשניהם דרג 3 בהתקנות מזגנים והמחירים הכי טובים בהתחייבות)*');
+    lines.push('🏷️ *קוד הטבה / אסמכתא: DZ-8810* (מחיר מוזל להתקנה)');
+    lines.push('');
+    if (clientName || clientPhone || clientCity || clientEmail) {
+      lines.push('👤 *פרטי לקוח:*');
+      if (clientName) lines.push('• שם: ' + clientName);
+      if (clientPhone) lines.push('• טלפון: ' + clientPhone);
+      if (clientCity) lines.push('• עיר/יישוב: ' + clientCity);
+      if (clientEmail) lines.push('• אימייל: ' + clientEmail);
+      lines.push('');
+    }
+    lines.push('📋 *פירוט המזגנים והעבודה הנדרשת:*');
+
+    units.forEach(function(u, idx) {
+      var unitBase = base1;
+      var unitPipeRate = pipeRate1;
+      if (u.type === '2.0-2.5') {
+        unitBase = base2;
+        unitPipeRate = pipeRate2;
+      } else if (u.type === '3.0-3.5') {
+        unitBase = base3;
+        unitPipeRate = pipeRate2;
+      } else if (u.type === 'mini') {
+        unitBase = baseMini;
+        unitPipeRate = pipeRate2;
+      }
+
+      var bracketCost = u.mount === 'flag' ? flagBracketRate : 0;
+      var pipeCost = (u.pipeMeters || 0) * unitPipeRate;
+      var mamadCost = (u.mamadDrills || 0) * mamadRate;
+      var trenchBlockCost = (u.trenchBlocks || 0) * trenchBlockRate;
+      var trenchConcreteCost = (u.trenchConcrete || 0) * trenchConcreteRate;
+
+      var unitTotal = Math.round(unitBase + bracketCost + pipeCost + mamadCost + trenchBlockCost + trenchConcreteCost);
+      grandTotal += unitTotal;
+
+      breakdownHtml += '<div class="breakdown-item" style="font-weight:700; margin-top:8px;">';
+      breakdownHtml += '  <span>מזגן #' + (idx + 1) + ' (' + getAcTypeName(u.type) + '):</span>';
+      breakdownHtml += '  <span>' + unitTotal.toLocaleString() + ' ₪</span>';
+      breakdownHtml += '</div>';
+      breakdownHtml += '<div class="breakdown-item sub">';
+      breakdownHtml += '  <span>• התקנה בסיסית (כולל 2 מטר צנרת ותושבת)</span>';
+      breakdownHtml += '  <span>' + Math.round(unitBase).toLocaleString() + ' ₪</span>';
+      breakdownHtml += '</div>';
+
+      lines.push('');
+      lines.push('❄️ *מזגן #' + (idx + 1) + ' (' + getAcTypeName(u.type) + '):* ' + unitTotal.toLocaleString() + ' ₪');
+      lines.push('  - התקנה בסיסית: ' + Math.round(unitBase).toLocaleString() + ' ₪');
+
+      if (u.mount === 'flag') {
+        breakdownHtml += '<div class="breakdown-item sub"><span>• תושבת דגל למעקה</span><span>' + Math.round(bracketCost).toLocaleString() + ' ₪</span></div>';
+        lines.push('  - תושבת דגל: ' + Math.round(bracketCost).toLocaleString() + ' ₪');
+      } else if (u.mount === 'floor') {
+        lines.push('  - מיקום מנוע: רצפה / גג / מרפסת שירות');
+      } else {
+        lines.push('  - מיקום מנוע: תושבת קיר רגילה (כלול)');
+      }
+
+      if (u.pipeMeters > 0) {
+        breakdownHtml += '<div class="breakdown-item sub"><span>• תוספת צנרת צמה (' + u.pipeMeters + ' מטר)</span><span>' + Math.round(pipeCost).toLocaleString() + ' ₪</span></div>';
+        lines.push('  - תוספת צנרת: ' + u.pipeMeters + ' מטר (' + Math.round(pipeCost).toLocaleString() + ' ₪)');
+      }
+
+      if (u.mamadDrills > 0) {
+        breakdownHtml += '<div class="breakdown-item sub"><span>• קידוח ממ״ד (' + u.mamadDrills + ' יחידות)</span><span>' + Math.round(mamadCost).toLocaleString() + ' ₪</span></div>';
+        lines.push('  - קידוח ממ״ד: ' + u.mamadDrills + ' יחידות (' + Math.round(mamadCost).toLocaleString() + ' ₪)');
+      }
+
+      if (u.trenchBlocks > 0) {
+        breakdownHtml += '<div class="breakdown-item sub"><span>• חציבה בקיר בלוקים (' + u.trenchBlocks + ' מטר)</span><span>' + Math.round(trenchBlockCost).toLocaleString() + ' ₪</span></div>';
+        lines.push('  - חציבה בבלוקים: ' + u.trenchBlocks + ' מטר (' + Math.round(trenchBlockCost).toLocaleString() + ' ₪)');
+      }
+
+      if (u.trenchConcrete > 0) {
+        breakdownHtml += '<div class="breakdown-item sub"><span>• חציבה בבטון (' + u.trenchConcrete + ' מטר)</span><span>' + Math.round(trenchConcreteCost).toLocaleString() + ' ₪</span></div>';
+        lines.push('  - חציבה בבטון: ' + u.trenchConcrete + ' מטר (' + Math.round(trenchConcreteCost).toLocaleString() + ' ₪)');
+      }
+    });
+
+    document.getElementById('total-display').innerText = grandTotal.toLocaleString() + ' ₪';
+    document.getElementById('units-count-text').innerText = units.length === 1 ? 'מזגן 1 בחישוב' : (units.length + ' מזגנים בחישוב');
+    document.getElementById('breakdown-container').innerHTML = breakdownHtml;
+
+    lines.push('');
+    lines.push('---------------------------');
+    lines.push('💰 *סה"כ משוער:* ' + grandTotal.toLocaleString() + ' ₪');
+    lines.push('🏷️ *קוד הטבה / אסמכתא: DZ-8810*');
+    lines.push('🛡️ *אחריות מלאה 5-7 שנים תלוי בחברת מזגנים*');
+    lines.push('🏷️ *מחירים מוזלים למי שעושה גם התקנה*');
+    lines.push('');
+    lines.push('*דוד ויוני התקנות ותיקונים — מוסמכי דרג 3 בהתחייבות למחירים הטובים ביותר!*');
+    lines.push('• חציבות אינן כוללות סגירה וטיח');
+    lines.push('• המחיר הינו אומדן ראשוני בהתאם למחירון המוסכם');
+    lines.push('');
+    lines.push('נשמח לתאם התקנה בהקדם!');
+
+    currentSummaryText = lines.join('\n');
+
+    // Update modal display email
+    var currentEmail = DEFAULT_INSTALLER_EMAIL;
+    var displayTarget = document.getElementById('modal-display-email');
+    if (displayTarget) displayTarget.innerText = currentEmail;
+
+    // WhatsApp button setup
+    var shareBtn = document.getElementById('whatsapp-share-btn');
+    if (shareBtn) {
+      shareBtn.onclick = function() {
+        var rawPhone = DEFAULT_INSTALLER_PHONE.replace(/[^0-9]/g, '');
+        if (rawPhone.startsWith('0')) {
+          rawPhone = '972' + rawPhone.slice(1);
+        }
+        if (!rawPhone) rawPhone = '972504467885';
+
+        var url = 'https://wa.me/' + rawPhone + '?text=' + encodeURIComponent(currentSummaryText);
+        window.open(url, '_blank');
+      };
+    }
+
+    // Copy Summary button setup
+    var copyBtn = document.getElementById('copy-summary-btn');
+    if (copyBtn) {
+      copyBtn.onclick = function() {
+        var textToCopy = currentSummaryText.replace(/\*/g, '');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(textToCopy).then(function() {
+            showToast('הסיכום הועתק ללוח בהצלחה!');
+          }).catch(function() {
+            promptCopyFallback(textToCopy);
+          });
+        } else {
+          promptCopyFallback(textToCopy);
+        }
+      };
+    }
+  }
+
+  function showToast(msg) {
+    var toast = document.getElementById('toast-notice');
+    if (toast) {
+      toast.innerText = msg;
+      toast.style.display = 'block';
+      setTimeout(function() { toast.style.display = 'none'; }, 3200);
+    }
+  }
+
+  function promptCopyFallback(text) {
+    var textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      showToast('הסיכום הועתק ללוח!');
+    } catch (err) {
+      alert('הסיכום להעתקה:\n\n' + text);
+    }
+    document.body.removeChild(textArea);
+  }
+
+  // Email Modal Logic
+  var emailBtn = document.getElementById('email-share-btn');
+  var modalOverlay = document.getElementById('email-modal-overlay');
+  var modalCloseBtn = document.getElementById('modal-close-btn');
+
+  function openEmailModal() {
+    if (modalOverlay) modalOverlay.classList.add('active');
+  }
+
+  function closeEmailModal() {
+    if (modalOverlay) modalOverlay.classList.remove('active');
+  }
+
+  if (emailBtn) {
+    emailBtn.addEventListener('click', openEmailModal);
+  }
+
+  if (modalCloseBtn) {
+    modalCloseBtn.addEventListener('click', closeEmailModal);
+  }
+
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', function(e) {
+      if (e.target === modalOverlay) closeEmailModal();
+    });
+  }
+
+  // 1. Direct Gmail Webmail
+  var btnOpenGmail = document.getElementById('btn-open-gmail');
+  if (btnOpenGmail) {
+    btnOpenGmail.addEventListener('click', function() {
+      var targetEmail = DEFAULT_INSTALLER_EMAIL;
+      var subject = 'פנייה והצעת מחיר - דוד ויוני התקנות מזגנים (' + (currentClientName || 'לקוח') + ')';
+      var body = currentSummaryText.replace(/\*/g, '');
+      var gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(targetEmail) + '&su=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      window.open(gmailUrl, '_blank');
+      closeEmailModal();
+    });
+  }
+
+  // 2. Mailto Option
+  var btnOpenMailto = document.getElementById('btn-open-mailto');
+  if (btnOpenMailto) {
+    btnOpenMailto.addEventListener('click', function() {
+      var targetEmail = DEFAULT_INSTALLER_EMAIL;
+      var subject = 'פנייה והצעת מחיר - דוד ויוני התקנות מזגנים (' + (currentClientName || 'לקוח') + ')';
+      var body = currentSummaryText.replace(/\*/g, '');
+      var mailtoUrl = 'mailto:' + encodeURIComponent(targetEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      window.location.href = mailtoUrl;
+      closeEmailModal();
+    });
+  }
+
+  // 3. Modal Copy Option
+  var btnModalCopy = document.getElementById('btn-modal-copy');
+  if (btnModalCopy) {
+    btnModalCopy.addEventListener('click', function() {
+      var targetEmail = DEFAULT_INSTALLER_EMAIL;
+      var subject = 'פנייה והצעת מחיר - דוד ויוני התקנות מזגנים (' + (currentClientName || 'לקוח') + ')';
+      var body = currentSummaryText.replace(/\*/g, '');
+      var fullCopy = 'לכבוד: ' + targetEmail + '\nנושא: ' + subject + '\n\n' + body;
+      
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullCopy).then(function() {
+          showToast('פרטי המייל וההצעה הועתקו ללוח בהצלחה!');
+        }).catch(function() {
+          promptCopyFallback(fullCopy);
+        });
+      } else {
+        promptCopyFallback(fullCopy);
+      }
+      closeEmailModal();
+    });
+  }
+
+  // Initial render
+  renderUnits();
+</script>
+
+</body>
+</html>
