@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>צ. ביקורת מבנים - דוחות בדק בית</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f2942">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="בדק בית">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css?v=4">
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="header-top">
+      <div class="brand-title">
+        <span>🏗️ צ. ביקורת מבנים</span>
+        <span class="brand-badge">PWA</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size: 0.8rem; font-weight: 500;">צוריאל צדוק</span>
+        <button type="button" onclick="openApiModal()" style="background:rgba(255,255,255,0.18); border:none; color:#fff; font-size:0.75rem; padding:3px 8px; border-radius:6px; cursor:pointer;" title="הגדרות API">⚙️ AI</button>
+      </div>
+    </div>
+    <div class="sub-header">
+      מערכת הפקת דוחות בדק בית ואיתור נזילות בשטח
+    </div>
+  </header>
+
+  <!-- TAB 1: FINDINGS DATABASE -->
+  <main id="tab-search" class="tab-content active container">
+    <!-- Active Room Selector -->
+    <div class="card" style="padding: 10px 14px; margin-bottom: 10px;">
+      <div style="font-size:0.8rem; font-weight:700; color:var(--text-muted); margin-bottom:6px;">חלל עבודה נוכחי לבדיקה:</div>
+      <div class="room-bar" id="room-bar"></div>
+    </div>
+
+    <!-- Search Box -->
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+      <button type="button" class="btn btn-primary" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; font-weight:700;" onclick="startVisionScan()">
+        📷 סריקת ליקוי מתמונה וטקסט (AI)
+      </button>
+      <button type="button" class="btn btn-outline" style="padding:10px 14px; font-weight:700;" onclick="switchTab('chat')">
+        💬 צ'אט מומחה
+      </button>
+    </div>
+    <div class="search-box">
+      <input type="text" id="search-input" class="search-input" placeholder="חיפוש מהיר במאגר (לפי ליקוי, תקן או קטגוריה)..." autocomplete="off">
+      <span class="search-icon">🔍</span>
+    </div>
+
+    <!-- Repository Filters -->
+    <div class="repo-filters" id="repo-filters"></div>
+
+    <!-- Count -->
+    <div id="results-count" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;"></div>
+
+    <!-- Findings List -->
+    <div id="findings-list"></div>
+  </main>
+
+  <!-- TAB 2: ACTIVE INSPECTION -->
+  <main id="tab-inspection" class="tab-content container">
+    <div id="inspection-items-list"></div>
+  </main>
+
+  <!-- TAB 3: CLIENT & PROPERTY SETTINGS -->
+  <main id="tab-settings" class="tab-content container">
+    <div class="card">
+      <h3 style="margin-bottom:14px; color:var(--primary);">פרטי הבדיקה והלקוח</h3>
+      
+      <div class="form-group">
+        <label class="form-label">שם המזמין / לקוח:</label>
+        <input type="text" id="input-client-name" class="form-input" placeholder="לדוגמה: ישראל ישראלי">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">טלפון לקוח:</label>
+        <input type="tel" id="input-client-phone" class="form-input" placeholder="050-0000000">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">כתובת הנכס:</label>
+        <input type="text" id="input-address" class="form-input" placeholder="רחוב, מספר בית, עיר, מספר דירה">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">סוג הנכס:</label>
+        <select id="input-property-type" class="form-select">
+          <option value="דירת מגורים (בית משותף)">דירת מגורים (בית משותף)</option>
+          <option value="דירת גן">דירת גן</option>
+          <option value="פנטהאוז / דופלקס">פנטהאוז / דופלקס</option>
+          <option value="בית צמוד קרקע / וילה">בית צמוד קרקע / וילה</option>
+          <option value="מבנה מסחרי / משרד">מבנה מסחרי / משרד</option>
+          <option value="רכוש משותף / לובי ומדרגות">רכוש משותף / לובי ומדרגות</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">תאריך הבדיקה:</label>
+        <input type="date" id="input-date" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">הערות כלליות ומצב הנכס:</label>
+        <textarea id="input-general-notes" class="form-textarea" placeholder="למשל: הדירה נמסרה לפני כחודש, טרם אוכלסה, בדיקה בוצעה בנוכחות בעל הנכס..."></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h3 style="margin:0; color:var(--primary); font-size:1.05rem;">מנוע AI וזיהוי תמונות (Client-Side)</h3>
+        <span id="settings-tab-api-badge" class="provider-badge unset">לא מוגדר</span>
+      </div>
+      <p style="font-size:0.83rem; color:var(--text-muted); margin-bottom:12px; line-height:1.5;">
+        ניתוח תמונות בשטח (Vision), בדיקת התאמה לתקנים ישראליים והפקת ליקויים אוטומטית פועלים ישירות מהדפדפן מול Google Gemini או OpenAI באמצעות מפתח ה-API האישי שלך ללא שרת ביניים.
+      </p>
+      <button type="button" class="btn btn-outline btn-block" onclick="openApiModal()">
+        ⚙️ הגדר מפתח API (Google Gemini / OpenAI)
+      </button>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:14px; color:var(--primary);">פרטי הבודק והעסק</h3>
+      <div style="font-size:0.9rem; line-height:1.8;">
+        <div><b>שם העסק:</b> צ. ביקורת מבנים</div>
+        <div><b>שם הבודק:</b> צוריאל צדוק</div>
+        <div><b>הסמכה:</b> בודק מוסמך ואיתור נזילות</div>
+        <div><b>טלפון:</b> 053-9514613</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:14px; color:var(--danger);">ניהול נתוני בדיקה</h3>
+      <button class="btn btn-danger btn-block" onclick="if(confirm('האם אתה בטוח שברצונך להתחיל בדיקה חדשה? כל הנתונים הנוכחיים יאופסו.')) { localStorage.removeItem('bedek_active_inspection'); location.reload(); }">
+        🗑️ התחל בדיקה חדשה (איפוס נתונים)
+      </button>
+    </div>
+  </main>
+
+  <!-- TAB 4: REPORT PREVIEW & EXPORT -->
+  <main id="tab-report" class="tab-content container">
+    <div class="card" style="text-align:center; padding: 20px; margin-bottom:16px;">
+      <h3 style="color:var(--primary); margin-bottom:8px;">דוח חוות דעת הנדסית</h3>
+      <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:16px;">הדוח ערוך לפי פקודת הראיות, מוכן להדפסה ישירה או שמירה כקובץ PDF מלא וממותג.</p>
+      <button class="btn btn-primary btn-block" style="font-size:1.1rem; padding:14px;" onclick="printReport()">
+        🖨️ הדפס / שמור כ-PDF
+      </button>
+    </div>
+
+    <div id="report-preview-container" class="card" style="padding: 24px; overflow-x:auto;"></div>
+  </main>
+
+    <!-- TAB 5: AI ENGINEERING EXPERT CHAT -->
+  <main id="tab-chat" class="tab-content container">
+    <div class="chat-wrapper card">
+      <!-- Chat Header -->
+      <div class="chat-header-bar">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.2rem;">🤖</span>
+          <div>
+            <div style="font-weight:700; font-size:0.95rem;">עוזר הנדסי אישי לבדק בית</div>
+            <div id="chat-header-status" style="font-size:0.75rem; opacity:0.85;">Google Gemini 1.5 Flash • 1,773 תקנים</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:0.75rem;">חלל:</span>
+          <select id="chat-room-select" class="form-select chat-room-select" onchange="activeRoom = this.value; renderRoomBar(); updateChatRoomDisplay();">
+            <!-- Filled dynamically -->
+          </select>
+          <button type="button" class="btn btn-sm" style="background:rgba(255,255,255,0.22); color:#fff; border:none; cursor:pointer;" onclick="openApiModal()" title="הגדרות API">
+            ⚙️ הגדרות
+          </button>
+        </div>
+      </div>
+
+      <!-- Banner if API key missing -->
+      <div id="chat-no-key-banner" class="chat-api-banner" style="display:none; margin: 10px 10px 0 10px;">
+        <div style="font-weight:700; margin-bottom:4px; font-size:0.92rem;">⚡ נדרש מפתח API להפעלת ניתוח ה-AI וזיהוי תמונות</div>
+        <div style="font-size:0.82rem; margin-bottom:8px; line-height:1.4;">
+          האפליקציה פועלת ישירות מול ה-AI ללא שרת. להפעלת מומחה הבדק וזיהוי הליקויים בתמונות, הזן מפתח Google Gemini (חינמי ומומלץ) או OpenAI.
+        </div>
+        <button type="button" class="btn btn-warning btn-sm" style="font-weight:700;" onclick="openApiModal()">
+          🔑 לחץ כאן להזנת מפתח API
+        </button>
+      </div>
+
+      <!-- Messages Feed -->
+      <div id="chat-messages" class="chat-messages-container">
+        <div class="chat-bubble bot">
+          <div class="chat-bubble-author">🤖 עוזר הנדסי (צ. ביקורת מבנים)</div>
+          <div class="chat-bubble-body">
+            שלום צוריאל! אני כאן לעזור לך בשטח בזמן אמת:
+            <ul style="margin:6px 0 0 16px; padding:0; font-size:0.85rem; line-height:1.6;">
+              <li>📸 <b>צילום ליקוי:</b> לחץ על 📷 וצרף תמונה לזיהוי אוטומטי של התקן וההנחיה.</li>
+              <li>🔍 <b>שאלות מקצועיות:</b> שאל על שיטות תיקון, תקנים ישראליים או פסיקות.</li>
+              <li>⚡ <b>שליטה ישירה:</b> כל ליקוי שמוצע ניתן להוספה ישירה לדוח בלחיצת כפתור אחת.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attached Image Preview Strip -->
+      <div id="chat-image-preview" class="chat-preview-strip" style="display:none;">
+        <img id="chat-preview-img" src="" alt="תמונה שנבחרה">
+        <div style="flex:1; font-size:0.8rem; color:#475569;">תמונה מוכנה לניתוח ראייה (Vision)</div>
+        <button type="button" class="btn btn-danger" style="padding:4px 8px; font-size:0.75rem;" onclick="clearChatImage()">✕ בטל</button>
+      </div>
+
+      <!-- Input Bar -->
+      <div class="chat-input-bar">
+        <input type="file" id="chat-file-input" accept="image/*" capture="environment" style="display:none;" onchange="handleChatImageSelect(event)">
+        <button type="button" class="chat-btn-action" onclick="document.getElementById('chat-file-input').click()" title="צלם או בחר תמונה">
+          📷
+        </button>
+        <textarea id="chat-input-text" class="chat-input-field" rows="1" placeholder="תאר ליקוי, שאל שאלה הנדסית או צלם..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}"></textarea>
+        <button type="button" id="chat-send-btn" class="btn btn-primary" style="padding:8px 14px; font-weight:700; border-radius:10px;" onclick="sendChatMessage()">
+          שלח
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- API SETTINGS MODAL -->
+  <div id="api-modal-overlay" class="modal-overlay" onclick="if(event.target === this) closeApiModal()">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 style="display:flex; align-items:center; gap:8px; font-size:1.05rem;">
+          <span>⚙️ הגדרות מנוע AI (Client-Side)</span>
+        </h3>
+        <button type="button" class="close-btn" onclick="closeApiModal()">✕</button>
+      </div>
+
+      <div style="background:#f1f5f9; padding:10px 12px; border-radius:8px; font-size:0.82rem; color:#334155; margin-bottom:14px; line-height:1.5;">
+        🔒 <b>פעולה ישירה (Client-side):</b> כל התמונות והשאלות נשלחות ישירות מהמכשיר שלך לשירות ה-AI. מפתח ה-API נשמר אך ורק במכשיר זה (localStorage).
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><b>ספק בינה מלאכותית:</b></label>
+        <select id="api-provider-select" class="form-select" onchange="handleProviderChange()">
+          <option value="gemini" selected>Google Gemini (ברירת מחדל מומלצת 🌟)</option>
+          <option value="openai">OpenAI (ChatGPT / GPT-4o)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><b>דגם (Model):</b></label>
+        <select id="api-model-select" class="form-select">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <div class="form-group">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <label class="form-label" style="margin:0;"><b>מפתח API (API Key):</b></label>
+          <span id="api-key-detected-badge" style="font-size:0.75rem; color:#059669; font-weight:700; display:none;"></span>
+        </div>
+        <div style="position:relative; display:flex; align-items:center;">
+          <input type="password" id="api-key-input" class="form-input" style="padding-left:42px; font-family:monospace; direction:ltr; text-align:left;" placeholder="הדבק כאן את המפתח (למשל AIzaSy...)" oninput="handleApiKeyInputChange(this.value)">
+          <button type="button" onclick="toggleApiKeyVisibility()" style="position:absolute; left:8px; background:none; border:none; cursor:pointer; font-size:1.15rem; padding:4px;" title="הצג / הסתר מפתח">👁️</button>
+        </div>
+        <div id="api-key-helper-text" style="font-size:0.78rem; color:#64748b; margin-top:6px; line-height:1.45;"></div>
+      </div>
+
+      <div id="api-test-status" style="display:none; padding:8px 12px; border-radius:8px; font-size:0.83rem; margin-bottom:12px;"></div>
+
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button type="button" class="btn btn-outline" style="flex:1;" onclick="testApiConnection()">
+          🔌 בדיקת חיבור
+        </button>
+        <button type="button" class="btn btn-primary" style="flex:1.5; font-weight:700;" onclick="saveApiSettings()">
+          💾 שמור הגדרות
+        </button>
+      </div>
+
+      <div style="margin-top:12px; text-align:center;">
+        <button type="button" style="background:none; border:none; color:var(--danger); font-size:0.8rem; cursor:pointer; text-decoration:underline;" onclick="clearApiKey()">
+          🗑️ מחק מפתח שמור
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT / ADD MODAL -->
+  <div id="modal-overlay" class="modal-overlay" onclick="if(event.target === this) closeModal()">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 id="modal-title">עריכת ליקוי</h3>
+        <button type="button" class="close-btn" onclick="closeModal()">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">חלל הבדיקה:</label>
+        <select id="modal-room" class="form-select">
+          <option value="כניסה / לובי">כניסה / לובי</option>
+          <option value="סלון">סלון</option>
+          <option value="מטבח">מטבח</option>
+          <option value="פינת אוכל">פינת אוכל</option>
+          <option value="מרפסת שמש">מרפסת שמש</option>
+          <option value="חדר שינה הורים">חדר שינה הורים</option>
+          <option value="חדר רחצה הורים">חדר רחצה הורים</option>
+          <option value="חדר שינה 1">חדר שינה 1</option>
+          <option value="חדר שינה 2">חדר שינה 2</option>
+          <option value="חדר רחצה כללי">חדר רחצה כללי</option>
+          <option value="חדר שירות / כביסה">חדר שירות / כביסה</option>
+          <option value="ממ&quot;ד">ממ"ד</option>
+          <option value="מסדרון">מסדרון</option>
+          <option value="חצר / גינה">חצר / גינה</option>
+          <option value="גג">גג</option>
+          <option value="מרתף">מרתף</option>
+          <option value="חניה">חניה</option>
+          <option value="שטחים משותפים">שטחים משותפים</option>
+          <option value="כללי">כללי</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">תיאור הליקוי:</label>
+        <textarea id="modal-item-title" class="form-textarea" rows="3"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">דרישת התקן / החוק:</label>
+        <textarea id="modal-std" class="form-textarea" rows="3"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">הנחיה לתיקון:</label>
+        <textarea id="modal-rec" class="form-textarea" rows="2"></textarea>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">מחיר יח' (₪):</label>
+          <input type="number" id="modal-price" class="form-input" min="0" step="50">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">כמות:</label>
+          <input type="number" id="modal-qty" class="form-input" min="1" step="1">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">יחידה:</label>
+          <input type="text" id="modal-unit" class="form-input" placeholder="יח' / מ&quot;ר">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">הערות בודק נוספות:</label>
+        <input type="text" id="modal-note" class="form-input" placeholder="למשל: בצד ימין ליד החלון">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">תמונות מהשטח:</label>
+        <input type="file" id="photo-file-input" accept="image/*" capture="environment" multiple style="display:none;" onchange="handlePhotoUpload(event)">
+        <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('photo-file-input').click()">
+          📷 צלם תמונה / בחר קובץ מהטלפון
+        </button>
+        <div id="modal-photos-grid" class="photos-grid"></div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" class="btn btn-primary" style="flex:2;" onclick="saveModalItem()">💾 שמור ליקוי</button>
+        <button type="button" class="btn btn-danger" style="flex:1;" onclick="deleteModalItem()">🗑️ הסר</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRINT REPORT TARGET (A4) -->
+  <div id="print-view"></div>
+
+  <!-- BOTTOM NAVIGATION BAR -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="search" onclick="switchTab('search')">
+      <span class="icon">🔍</span>
+      <span>מאגר ממצאים</span>
+    </button>
+    <button class="nav-btn" data-tab="chat" onclick="switchTab('chat')">
+      <span class="icon">💬</span>
+      <span>עוזר AI</span>
+    </button>
+    <button class="nav-btn" data-tab="inspection" onclick="switchTab('inspection')">
+      <span class="icon">📋</span>
+      <span>בדיקה <span id="badge-count" class="badge-count" style="display:none;">0</span></span>
+    </button>
+    <button class="nav-btn" data-tab="settings" onclick="switchTab('settings')">
+      <span class="icon">⚙️</span>
+      <span>פרטי לקוח</span>
+    </button>
+    <button class="nav-btn" data-tab="report" onclick="switchTab('report')">
+      <span class="icon">📄</span>
+      <span>הפקת דוח</span>
+    </button>
+  </nav>
+
+  <!-- SCRIPTS -->
+  <script src="shimon_inspection.js"></script>
+  <script src="findings_data.js"></script>
+  <script src="app.js?v=4"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg fail:', err));
+      });
+    }
+  </script>
+</body>
+</html>
