@@ -427,29 +427,293 @@ function createNewReportSubmit() {
 // ---------------------------------------------------------
 // SCREEN 2: Inspection Editor (עורך בדיקה לפי חדרים 1:1)
 // ---------------------------------------------------------
+
+// ========================================================
+// REPORTO 1:1 INSPECTION EDITOR & CHAPTERS (Screenshots mid_010, mid_020, mid_025)
+// ========================================================
+
 function renderInspectionEditor() {
   if (!activeInspection) return;
 
-  // Header Banner Details
-  document.getElementById('editor-insp-client').textContent = activeInspection.clientName || 'ללא שם לקוח';
-  document.getElementById('editor-insp-address').textContent = activeInspection.address || 'ללא כתובת נכס';
+  const propEl = document.getElementById('editor-property-type');
+  if (propEl) propEl.textContent = activeInspection.propertyType || 'דירה מקבלן';
+  
+  const numEl = document.getElementById('editor-report-num');
+  if (numEl) numEl.textContent = '#' + (activeInspection.reportNum || activeInspection.reportNumber || '1005');
 
-  const totalItems = activeInspection.items ? activeInspection.items.length : 0;
-  let totalCost = 0;
-  if (activeInspection.items) {
-    activeInspection.items.forEach(it => {
-      totalCost += (Number(it.price) || 0) * (Number(it.qty) || 1);
-    });
+  const addrEl = document.getElementById('editor-address');
+  if (addrEl) addrEl.textContent = activeInspection.address || 'יהדות מרוקו 107 נתיבות קומה 1 דירה 5';
+
+  const clientEl = document.getElementById('editor-client-sub');
+  if (clientEl) clientEl.textContent = (activeInspection.clientName || 'שמעון מאיר כהן קדוש') + ' • בדק בית דירתי';
+
+  const statusEl = document.getElementById('editor-status-text');
+  if (statusEl) statusEl.textContent = activeInspection.status === 'completed' ? 'הושלם' : 'בעבודה';
+
+  const count = activeInspection.items ? activeInspection.items.length : 0;
+  const countBadge = document.getElementById('subtab-findings-count');
+  if (countBadge) countBadge.textContent = count;
+
+  const totalHdr = document.getElementById('findings-total-header');
+  if (totalHdr) totalHdr.textContent = 'ממצאים ' + count;
+
+  const dClient = document.getElementById('detail-client-name');
+  if (dClient) dClient.textContent = activeInspection.clientName || 'שמעון מאיר כהן קדוש';
+  
+  const dDate = document.getElementById('detail-visit-date');
+  if (dDate) {
+    if (activeInspection.date && activeInspection.date.includes('-')) {
+      dDate.textContent = activeInspection.date.split('-').reverse().join('/');
+    } else {
+      dDate.textContent = activeInspection.date || '30/10/2026';
+    }
   }
-  document.getElementById('editor-metric-items').textContent = totalItems;
-  document.getElementById('editor-metric-cost').textContent = '₪' + totalCost.toLocaleString('he-IL');
 
-  // Render Horizontal Rooms Bar (Reporto 1:1)
-  renderRoomsBar();
+  const dInsp = document.getElementById('detail-inspector-name');
+  if (dInsp) dInsp.textContent = activeInspection.inspectorName || 'צדוק צוריאל';
 
-  // Render Defect Cards in Active Room
-  renderActiveRoomFindings();
+  renderReportoChapters();
 }
+
+function switchEditorSubtab(subtab) {
+  const btnFindings = document.getElementById('subtab-findings-btn');
+  const btnDetails = document.getElementById('subtab-details-btn');
+  const viewFindings = document.getElementById('editor-findings-view');
+  const viewDetails = document.getElementById('editor-details-view');
+
+  if (subtab === 'findings') {
+    btnFindings?.classList.add('active');
+    btnDetails?.classList.remove('active');
+    if (viewFindings) viewFindings.style.display = 'block';
+    if (viewDetails) viewDetails.style.display = 'none';
+  } else {
+    btnDetails?.classList.add('active');
+    btnFindings?.classList.remove('active');
+    if (viewFindings) viewFindings.style.display = 'none';
+    if (viewDetails) viewDetails.style.display = 'block';
+  }
+}
+
+function getChapterForItem(item) {
+  const title = (item.title || item.name || '').toLowerCase();
+  const room = (item.room || '').toLowerCase();
+  const cat = (item.cat || '').toLowerCase();
+
+  if (room.includes('רחצה') || room.includes('שירותי') || room.includes('שירות') || title.includes('ניקוז') || title.includes('אסלה') || title.includes('אינסטלציה') || cat.includes('אינסטלציה')) {
+    return 'אינסטלציה סניטרית וניקוז';
+  }
+  if (title.includes('טיח') || title.includes('צבע') || room.includes('צבע') || cat.includes('טיח')) {
+    return 'טיח וצבע';
+  }
+  if (room.includes('ממ"ד') || title.includes('ממ"ד') || title.includes('מסגרות') || cat.includes('מסגרות')) {
+    return 'מסגרות וממ"ד';
+  }
+  if (room.includes('דלת') || title.includes('דלת') || title.includes('חלון') || title.includes('ארונות')) {
+    return 'דלתות, חלונות ונגרות';
+  }
+  if (title.includes('ריצוף') || title.includes('שיפוע') || title.includes('אריח') || cat.includes('ריצוף')) {
+    return 'ריצוף וחיפוי פנים';
+  }
+  if (room.includes('חניה') || title.includes('חניה') || room.includes('מרפסת') || room.includes('חצר')) {
+    return 'חניה ופיתוח חוץ';
+  }
+  if (room.includes('חשמל') || title.includes('חשמל') || title.includes('הארקה')) {
+    return 'מתקני חשמל ותקשורת';
+  }
+  return 'כללי ושונות';
+}
+
+function renderReportoChapters() {
+  const container = document.getElementById('findings-chapters-container');
+  if (!container) return;
+
+  if (!activeInspection || !activeInspection.items || activeInspection.items.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;">אין עדיין ממצאים בדוח זה. לחץ על "+ הוסף ממצא" למטה.</div>';
+    return;
+  }
+
+  const chapters = {};
+  activeInspection.items.forEach((it, idx) => {
+    const chName = getChapterForItem(it);
+    if (!chapters[chName]) chapters[chName] = [];
+    chapters[chName].push({ item: it, originalIndex: idx });
+  });
+
+  const preferredOrder = [
+    'אינסטלציה סניטרית וניקוז',
+    'טיח וצבע',
+    'מסגרות וממ"ד',
+    'דלתות, חלונות ונגרות',
+    'ריצוף וחיפוי פנים',
+    'חניה ופיתוח חוץ',
+    'מתקני חשמל ותקשורת',
+    'כללי ושונות'
+  ];
+
+  const sortedChapterNames = Object.keys(chapters).sort((a, b) => {
+    let ia = preferredOrder.indexOf(a);
+    let ib = preferredOrder.indexOf(b);
+    if (ia === -1) ia = 99;
+    if (ib === -1) ib = 99;
+    return ia - ib;
+  });
+
+  let html = '';
+  sortedChapterNames.forEach((chName, chIdx) => {
+    const items = chapters[chName];
+    const chNum = chIdx + 1;
+
+    html += '<div class="rep-chapter-card open" id="chapter-card-' + chNum + '">' +
+      '<div class="rep-chapter-header" onclick="toggleChapterAccordion(' + chNum + ')">' +
+        '<div class="rep-chapter-title-wrap">' +
+          '<span class="rep-chapter-num-badge">' + chNum + '</span>' +
+          '<span class="rep-chapter-title">' + escapeHtml(chName) + '</span>' +
+          '<span class="rep-chapter-count">' + items.length + '</span>' +
+        '</div>' +
+        '<div class="rep-chapter-chevron">' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
+        '</div>' +
+      '</div>' +
+      '<div class="rep-chapter-body" id="chapter-body-' + chNum + '">';
+
+    items.forEach(({ item, originalIndex }, itemSubIdx) => {
+      const itemNumStr = chNum + '.' + (itemSubIdx + 1);
+      const roomStr = item.room || 'כללי';
+      const cleanTitle = (item.title || item.name || '').replace(/^[0-9]+\.[0-9]*\s*/, '');
+      const photoCount = (item.photos && item.photos.length) || (item.reporto_images && item.reporto_images.length) || 1;
+      
+      let thumbSrc = '';
+      if (item.photos && item.photos.length > 0) {
+        thumbSrc = item.photos[0];
+      } else if (item.reporto_images && item.reporto_images.length > 0) {
+        thumbSrc = item.reporto_images[0].url || item.reporto_images[0];
+      } else {
+        thumbSrc = 'photos/sink_drain.png';
+      }
+
+      html += '<div class="rep-finding-item" onclick="openEditModalForFinding(' + originalIndex + ')">' +
+        '<button type="button" class="rep-finding-left-btn" onclick="event.stopPropagation(); openFindingItemActions(' + originalIndex + ')">' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle><circle cx="5" cy="12" r="1.5"></circle></svg>' +
+        '</button>' +
+        '<div class="rep-finding-info">' +
+          '<div class="rep-finding-room">' + itemNumStr + ' ' + escapeHtml(roomStr) + '</div>' +
+          '<div class="rep-finding-title">' + escapeHtml(cleanTitle) + '</div>' +
+        '</div>' +
+        '<div class="rep-finding-thumb-wrap">' +
+          '<img src="' + thumbSrc + '" alt="ליקוי" class="rep-finding-thumb" onerror="this.src=\'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' fill=\'%2394a3b8\' viewBox=\'0 0 24 24\'><rect width=\'24\' height=\'24\' fill=\'%23334155\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'white\' font-size=\'12\'>📷</text></svg>\'">' +
+          (photoCount > 1 ? '<span class="rep-finding-thumb-badge">' + photoCount + '</span>' : '') +
+        '</div>' +
+      '</div>';
+    });
+
+    html += '</div></div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleChapterAccordion(chNum) {
+  const card = document.getElementById('chapter-card-' + chNum);
+  if (card) {
+    card.classList.toggle('open');
+  }
+}
+
+function toggleStatusDropdown() {
+  if (!activeInspection) return;
+  const newStatus = activeInspection.status === 'completed' ? 'in_progress' : 'completed';
+  activeInspection.status = newStatus;
+  saveActiveInspection();
+  renderInspectionEditor();
+}
+
+function toggleFindingsSearch() {
+  const bar = document.getElementById('findings-search-bar');
+  if (bar) {
+    bar.style.display = bar.style.display === 'none' ? 'block' : 'none';
+    if (bar.style.display === 'block') {
+      document.getElementById('findings-search-input')?.focus();
+    }
+  }
+}
+
+function filterRenderedFindings() {
+  const query = (document.getElementById('findings-search-input')?.value || '').toLowerCase().trim();
+  const items = document.querySelectorAll('.rep-finding-item');
+  items.forEach(el => {
+    const text = el.textContent.toLowerCase();
+    el.style.display = text.includes(query) ? 'flex' : 'none';
+  });
+}
+
+function openEditModalForFinding(index) {
+  if (!activeInspection || !activeInspection.items || !activeInspection.items[index]) return;
+  const item = activeInspection.items[index];
+  activeFindingIndex = index;
+
+  document.getElementById('edit-modal-title').textContent = 'ערוך ממצא';
+  document.getElementById('form-item-title').value = item.title || item.name || '';
+  document.getElementById('form-item-std').value = item.std || item.reporto_std || '';
+  document.getElementById('form-item-rec').value = item.rec || item.reporto_rec || '';
+  document.getElementById('form-item-note').value = item.note || '';
+  document.getElementById('form-item-price').value = item.price || 0;
+  document.getElementById('form-item-qty').value = item.qty || 1;
+  document.getElementById('form-item-unit').value = item.unit || "קומפ'";
+
+  calculateModalTotal();
+
+  currentModalPhotos = item.photos ? [...item.photos] : [];
+  renderModalPhotos();
+
+  const modal = document.getElementById('modal-edit-finding');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+  }
+}
+
+function openFindingItemActions(index) {
+  if (confirm('האם ברצונך למחוק ממצא זה מהדוח?')) {
+    activeInspection.items.splice(index, 1);
+    saveActiveInspection();
+    renderInspectionEditor();
+  }
+}
+
+function editDeclaration() {
+  const current = document.getElementById('detail-declaration-text').textContent.trim();
+  const val = prompt('עריכת נוסח הצהרת הבודק:', current);
+  if (val !== null) {
+    document.getElementById('detail-declaration-text').textContent = val;
+  }
+}
+
+function editGeneralDetails() {
+  const name = prompt('שם המזמין / לקוח:', activeInspection.clientName || '');
+  if (name !== null) activeInspection.clientName = name;
+  const addr = prompt('כתובת הנכס:', activeInspection.address || '');
+  if (addr !== null) activeInspection.address = addr;
+  saveActiveInspection();
+  renderInspectionEditor();
+}
+
+function editPreliminaryNotes() {
+  alert('ניתן לערוך את רשימת התקנים וההערות המקדימות בתבנית הדוח.');
+}
+
+function shareReportAction() {
+  if (navigator.share) {
+    navigator.share({
+      title: activeInspection.title || 'דוח בדק בית',
+      text: 'דוח בדק בית עבור ' + (activeInspection.address || ''),
+      url: window.location.href
+    }).catch(() => {});
+  } else {
+    navigator.clipboard?.writeText(window.location.href);
+    alert('קישור לדוח הועתק ללוח!');
+  }
+}
+
 
 function getAllAvailableRooms() {
   const set = new Set([...DEFAULT_ROOMS, ...customRooms]);

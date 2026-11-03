@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="בדק בית">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=135">
+  <link rel="stylesheet" href="style.css?v=140">
 </head>
 <body>
 
@@ -80,85 +80,156 @@
   <!-- ==============================================
        TAB 2: INSPECTION EDITOR (עורך בדיקה)
        ============================================== -->
-  <main id="tab-editor" class="tab-content container">
-    <!-- Active Inspection Header Banner -->
-    <div class="inspection-active-bar">
-      <div>
-        <div class="insp-title" id="editor-insp-client">שמעון מאיר כהן קדוש</div>
-        <div class="insp-sub" id="editor-insp-address">יהדות מרוקו 107, דירה 5, נתיבות</div>
+  <main id="tab-editor" class="tab-content">
+    <!-- REPORTO 1:1 EDITOR HEADER (Screenshot mid_010.jpg) -->
+    <header class="rep-editor-header">
+      <div class="rep-editor-nav">
+        <button type="button" class="rep-back-btn" onclick="switchNavTab('reports')" title="חזרה לרשימת דוחות">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+        <div class="rep-editor-actions">
+          <button type="button" class="rep-icon-btn" onclick="openReportActionsModal()" title="תפריט פעולות">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle><circle cx="5" cy="12" r="1.5"></circle></svg>
+          </button>
+          <button type="button" class="rep-icon-btn" onclick="downloadReportPdfAction()" title="הורד PDF">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          </button>
+          <button type="button" class="rep-icon-btn" onclick="sendReportEmailAction()" title="שלח במייל">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+          </button>
+          <button type="button" class="rep-icon-btn" onclick="openSpecCompareModal()" title="בדיקת מפרט מכר (AI)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </button>
+        </div>
       </div>
-      <div class="insp-metrics">
-        <div class="insp-metric-box">
-          <div class="insp-metric-val" id="editor-metric-items">31</div>
-          <div class="insp-metric-lbl">ליקויים</div>
+
+      <div class="rep-editor-info">
+        <div class="rep-editor-meta-row">
+          <span class="rep-editor-tag" id="editor-property-type">דירה מקבלן</span>
+          <span class="rep-editor-num" id="editor-report-num">#1005</span>
         </div>
-        <div class="insp-metric-box">
-          <div class="insp-metric-val" id="editor-metric-cost">₪28,450</div>
-          <div class="insp-metric-lbl">אומדן כולל</div>
+        <h1 class="rep-editor-address" id="editor-address">יהדות מרוקו 107 נתיבות קומה 1 דירה 5</h1>
+        <div class="rep-editor-client-sub" id="editor-client-sub">שמעון מאיר כהן קדוש • בדק בית דירתי</div>
+        <div class="rep-status-dropdown-wrap">
+          <button type="button" class="rep-status-pill" id="editor-status-btn" onclick="toggleStatusDropdown()">
+            <span class="rep-status-dot"></span>
+            <span id="editor-status-text">בעבודה</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
         </div>
-        <button type="button" class="btn btn-gold btn-sm" onclick="switchNavTab('report')">
-          <span>📄</span>
-          <span>הפק דוח</span>
+      </div>
+
+      <!-- Reporto 1:1 Subtabs -->
+      <div class="rep-editor-subtabs">
+        <button type="button" class="rep-subtab-btn active" id="subtab-findings-btn" onclick="switchEditorSubtab('findings')">
+          <span>ממצאים</span>
+          <span class="rep-subtab-badge" id="subtab-findings-count">41</span>
+        </button>
+        <button type="button" class="rep-subtab-btn" id="subtab-details-btn" onclick="switchEditorSubtab('details')">
+          <span>פרטים</span>
         </button>
       </div>
-    </div>
+    </header>
 
-    <!-- Rooms Navigation Bar (Reporto 1:1) -->
-    <div class="room-bar-container">
-      <div style="font-size:0.78rem; font-weight:700; color:var(--text-muted); margin-bottom:6px;">סרגל חללים וחדרים לבדיקה:</div>
-      <div class="room-bar" id="editor-room-bar">
-        <!-- Rendered by JS -->
-      </div>
-    </div>
-
-    <!-- Active Room Content Area -->
-    <div class="card" style="margin-bottom:12px; background:#f8fafc; border:1px solid var(--border);">
-      <div class="card-header-flex">
-        <div>
-          <span style="font-size:1.15rem; font-weight:800; color:var(--primary);" id="active-room-title">סלון</span>
-          <span style="font-size:0.85rem; color:var(--text-muted); margin-right:8px;" id="active-room-summary">(0 ליקויים)</span>
-        </div>
-        <div style="display:flex; flex-wrap:wrap; gap:8px;">
-          <button type="button" class="btn btn-primary btn-sm" onclick="openNewRepoModal()">
-            <span>➕</span>
-            <span>הוסף מאגר חדש</span>
+    <!-- SUBTAB 1: FINDINGS (Reporto 1:1 Screenshot mid_010.jpg) -->
+    <div id="editor-findings-view" class="rep-subtab-content active">
+      <div class="rep-findings-subbar">
+        <div class="rep-findings-total" id="findings-total-header">ממצאים 41</div>
+        <div class="rep-findings-tools">
+          <button type="button" class="rep-tool-icon" onclick="openReportActionsModal()" title="אפשרויות">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle><circle cx="5" cy="12" r="1.5"></circle></svg>
           </button>
-          <button type="button" class="btn btn-gold btn-sm" onclick="document.getElementById('import-repo-input').click()">
-            <span>📥</span>
-            <span>ייבוא מאגר</span>
-          </button>
-          <input type="file" id="import-repo-input" accept=".json,.csv" style="display:none;" onchange="importRepoFromFile(event)">
-          <button type="button" class="btn btn-outline btn-sm" onclick="openCustomFindingModal()">
-            <span>✍️</span>
-            <span>ממצא מותאם אישית</span>
+          <button type="button" class="rep-tool-icon" onclick="toggleFindingsSearch()" title="חיפוש ממצא">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           </button>
         </div>
       </div>
 
-      <!-- Repositories Pills -->
-      <div class="repo-tabs-bar" id="stocks-repo-tabs">
+      <div id="findings-search-bar" style="display:none; padding:8px 16px; background:#fff; border-bottom:1px solid #e2e8f0;">
+        <input type="text" id="findings-search-input" class="form-input" placeholder="חיפוש ממצא לפי שם, חדר או תקן..." oninput="filterRenderedFindings()">
+      </div>
+
+      <!-- Chapter Accordions List (Reporto 1:1) -->
+      <div id="findings-chapters-container" class="rep-chapters-list">
         <!-- Rendered by JS -->
       </div>
 
-      <!-- Search in Repositories -->
-      <div class="search-bar-wrap">
-        <input type="text" id="stocks-search-input" class="search-input" placeholder="חיפוש מהיר במאגר (שם ליקוי, תקן ישראלי, המלצה או קטגוריה)..." oninput="renderStocksBrowser()">
-        <span class="search-icon">🔍</span>
-      </div>
+      <!-- Floating Add Finding Button 1:1 -->
+      <button type="button" class="rep-floating-add-btn" onclick="openAddFindingModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <span>הוסף ממצא</span>
+      </button>
+    </div>
 
-      <!-- Summary count -->
-      <div id="stocks-count-summary" style="font-size:0.82rem; color:var(--text-muted); margin-bottom:12px;"></div>
+    <!-- SUBTAB 2: DETAILS (Reporto 1:1 Screenshot mid_025.jpg) -->
+    <div id="editor-details-view" class="rep-subtab-content" style="display:none;">
+      <div class="rep-details-container">
+        <!-- Card 1: הצהרה -->
+        <div class="rep-detail-card">
+          <div class="rep-detail-card-header">
+            <h3>הצהרה</h3>
+            <button type="button" class="rep-card-edit-btn" onclick="editDeclaration()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              <span>עריכה</span>
+            </button>
+          </div>
+          <div class="rep-detail-card-body" id="detail-declaration-text">
+            אני נותן חוות דעתי זו במקום עדות בבית משפט. אני מצהיר בזאת, כי ידוע לי היטב שלעניין הוראות החוק הפלילי בדבר עדות שקר בבית משפט, דין חוות דעת זו, כשהיא חתומה על ידי, כדין עדות בשבועה שנתתי בבית משפט.
+          </div>
+        </div>
 
-      <!-- Category Accordions List -->
-      <div id="stocks-categories-list">
-        <!-- Rendered by JS -->
+        <!-- Card 2: פרטים כלליים -->
+        <div class="rep-detail-card">
+          <div class="rep-detail-card-header">
+            <h3>פרטים כלליים</h3>
+            <button type="button" class="rep-card-edit-btn" onclick="editGeneralDetails()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              <span>עריכה</span>
+            </button>
+          </div>
+          <div class="rep-detail-card-body">
+            <div><b>שם המזמין:</b> <span id="detail-client-name">שמעון מאיר כהן קדוש</span></div>
+            <div><b>תאריך ביקור בנכס:</b> <span id="detail-visit-date">30/10/2026</span></div>
+            <div><b>שם הבודק:</b> <span id="detail-inspector-name">צדוק צוריאל</span></div>
+            <div><b>שם העסק:</b> <span>צ. ביקורת מבנים</span></div>
+            <div><b>טלפון הבודק:</b> <span>053-9514613</span></div>
+          </div>
+        </div>
+
+        <!-- Card 3: הערות מקדימות -->
+        <div class="rep-detail-card">
+          <div class="rep-detail-card-header">
+            <h3>הערות מקדימות</h3>
+            <button type="button" class="rep-card-edit-btn" onclick="editPreliminaryNotes()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              <span>עריכה</span>
+            </button>
+          </div>
+          <div class="rep-detail-card-body">
+            <h4 style="margin:0 0 6px 0; font-size:0.92rem; color:#0f172a;">חוות הדעת מסתמכת על:</h4>
+            <ul style="margin:0 0 14px 18px; padding:0; font-size:0.86rem; color:#334155; line-height:1.6;">
+              <li>התקנים הישראליים.</li>
+              <li>תקנות התכנון והבנייה תש"ל 1970.</li>
+              <li>תקנות הג"א, התגוננות אזרחית.</li>
+              <li>הל"ת, הוראות למתקני תברואה.</li>
+              <li>המפרט הכללי הבין משרדי.</li>
+              <li>חוק החשמל.</li>
+              <li>תכניות הדירה.</li>
+            </ul>
+            <h4 style="margin:0 0 6px 0; font-size:0.92rem; color:#0f172a;">הערות כלליות לדוח</h4>
+            <ul style="margin:0 0 0 18px; padding:0; font-size:0.86rem; color:#334155; line-height:1.6;">
+              <li>המחירים הנ"ל מתבססים על עבודות תיקון המתבצעות ע"י קבלן ראשי המחזיק צוות וציוד באזור, באם העבודות יבוצעו.</li>
+              <li>ע"י קבלנים מזדמנים הרי יש לצפות למחירים גבוהים מהנקובים, בשיעור של עד 30%-.</li>
+              <li>המחירים צמודים למדד הבניה הידוע בזמן עריכת הביקורת.</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </main>
 
-  <!-- ==============================================
-       TAB 4: REPORT PREVIEW & EXPORT (הפקת דוח)
-       ============================================== -->
   <main id="tab-report" class="tab-content container">
     <!-- Report Action Controls -->
     <div class="card report-controls-bar" style="background:#ffffff; padding:16px; margin-bottom:16px;">
@@ -496,7 +567,7 @@
   <!-- SCRIPTS -->
   <script src="shimon_inspection.js"></script>
   <script src="findings_data.js"></script>
-  <script src="app.js?v=135"></script>
+  <script src="app.js?v=140"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -652,6 +723,89 @@
           <span>💾 שמור מאגר במערכת</span>
         </button>
         <button type="button" class="btn btn-outline" onclick="closeNewRepoModal()">ביטול</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- REPORTO 1:1 ACTIONS SHEET -->
+  <div id="modal-report-actions" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeReportActionsModal()">
+    <div class="modal-sheet rep-actions-sheet">
+      <div class="rep-actions-header">
+        <h3 id="rep-actions-title">פעולות דוח</h3>
+        <button type="button" class="close-btn" onclick="closeReportActionsModal()">✕</button>
+      </div>
+      <div class="rep-actions-grid">
+        <button type="button" class="rep-action-item" onclick="sendReportEmailAction()">
+          <span class="rep-action-icon" style="background:#eff6ff; color:#2563eb;">✉️</span>
+          <span class="rep-action-text">שליחה למייל</span>
+        </button>
+        <button type="button" class="rep-action-item" onclick="downloadReportPdfAction()">
+          <span class="rep-action-icon" style="background:#fef2f2; color:#dc2626;">📄</span>
+          <span class="rep-action-text">הורדת PDF</span>
+        </button>
+        <button type="button" class="rep-action-item" onclick="downloadReportExcelAction()">
+          <span class="rep-action-icon" style="background:#ecfdf5; color:#059669;">📊</span>
+          <span class="rep-action-text">הורדת EXCEL</span>
+        </button>
+        <button type="button" class="rep-action-item" onclick="duplicateReportAction()">
+          <span class="rep-action-icon" style="background:#f5f3ff; color:#7c3aed;">📋</span>
+          <span class="rep-action-text">שכפול דוח</span>
+        </button>
+        <button type="button" class="rep-action-item" onclick="previewReportAction()">
+          <span class="rep-action-icon" style="background:#fffbeb; color:#d97706;">👁️</span>
+          <span class="rep-action-text">תצוגה מקדימה</span>
+        </button>
+        <button type="button" class="rep-action-item" onclick="openSpecCompareModal()">
+          <span class="rep-action-icon" style="background:#fdf2f8; color:#db2777;">📑</span>
+          <span class="rep-action-text">השוואת מפרט (AI)</span>
+        </button>
+        <button type="button" class="rep-action-item" onclick="editTemplateAction()">
+          <span class="rep-action-icon" style="background:#f0fdf4; color:#16a34a;">⚙️</span>
+          <span class="rep-action-text">עריכת תבנית</span>
+        </button>
+        <button type="button" class="rep-action-item" onclick="openReportSettingsAction()">
+          <span class="rep-action-icon" style="background:#f8fafc; color:#475569;">🛠️</span>
+          <span class="rep-action-text">הגדרות דוח</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPEC & PLANS AI COMPARISON MODAL -->
+  <div id="modal-spec-compare" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeSpecCompareModal()">
+    <div class="modal-sheet" style="max-width:680px;">
+      <div class="modal-header">
+        <h3>📑 בדיקת התאמה למפרט מכר ותוכניות (AI)</h3>
+        <button type="button" class="close-btn" onclick="closeSpecCompareModal()">✕</button>
+      </div>
+      <div style="padding:14px;">
+        <p style="font-size:0.86rem; color:#475569; margin-bottom:12px; line-height:1.5;">
+          העלה מסמך מפרט מכר (צו מכר), חוזה מכר, תוכנית אדריכלית או שינויי דיירים.
+          ה-AI יסרוק את כל ממצאי הבדיקה מול המפרט, יאתר אי-התאמות, ויוסיף צילום מסך רלוונטי של הסעיף או התוכנית כנספח לדוח.
+        </p>
+
+        <div style="border:2px dashed #cbd5e1; border-radius:10px; padding:20px; text-align:center; background:#f8fafc; margin-bottom:14px; cursor:pointer;" onclick="document.getElementById('spec-file-input').click()">
+          <input type="file" id="spec-file-input" accept=".pdf,.doc,.docx,image/*" style="display:none;" onchange="handleSpecFileSelected(event)">
+          <div style="font-size:2rem; margin-bottom:6px;">📤</div>
+          <div style="font-weight:700; color:#1e293b; font-size:0.95rem;">לחץ כאן לבחירת קובץ מפרט / חוזה / תוכנית</div>
+          <div style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">תומך ב-PDF, תמונות, Word</div>
+        </div>
+
+        <div id="spec-compare-preview" style="display:none; background:#f1f5f9; border-radius:8px; padding:10px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span style="font-weight:700; font-size:0.88rem;" id="spec-file-name">spec.pdf</span>
+            <span style="font-size:0.78rem; color:#64748b; margin-right:8px;" id="spec-file-size">1.2 MB</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-danger" onclick="selectedSpecFile=null; document.getElementById('spec-compare-preview').style.display='none';">✕</button>
+        </div>
+
+        <button type="button" class="btn btn-gold btn-block" style="font-weight:800; font-size:1rem; padding:12px;" onclick="executeSpecAiComparison()">
+          <span>🤖 התחל סריקת התאמה והוספת נספחים</span>
+        </button>
+
+        <div id="spec-compare-results" style="display:none; margin-top:16px;">
+        </div>
       </div>
     </div>
   </div>
