@@ -1067,6 +1067,26 @@ function generateReportDocument() {
   const vatAmount = grandTotal * 0.18;
   const grandTotalWithVat = grandTotal + vatAmount;
 
+  // Collect all unique standard screenshots for Appendix
+  const allStdScreenshots = [];
+  const seenUrls = new Set();
+  items.forEach((it, idx) => {
+    const stdImgs = it.reporto_images || it.standard_images || [];
+    stdImgs.forEach(s => {
+      const u = s.url || s;
+      if (u && !seenUrls.has(u)) {
+        seenUrls.add(u);
+        allStdScreenshots.push({
+          url: u,
+          title: s.title || ('צילום מסך מתוך התקן הרשמי - ממצא ' + (idx + 1)),
+          std: s.standard || it.std || '',
+          defectNum: idx + 1,
+          room: it.room || 'כללי'
+        });
+      }
+    });
+  });
+
   paper.innerHTML = `
     <!-- 1. COVER PAGE (שער מהודר) -->
     <div class="report-cover">
@@ -1192,7 +1212,27 @@ function generateReportDocument() {
           const photosHtml = (it.photos && it.photos.length > 0)
             ? `
               <div class="report-photos-grid">
-                ${it.photos.map(src => `<img src="${escapeHtml(src)}" class="report-photo-img">`).join('')}
+                ${it.photos.map(src => `<img src="${escapeHtml(src)}" class="report-photo-img" alt="צילום ליקוי בשטח">`).join('')}
+              </div>
+            `
+            : '';
+
+          const stdImgs = it.reporto_images || it.standard_images || [];
+          const stdScreenshotsHtml = (stdImgs.length > 0)
+            ? `
+              <div class="report-std-screenshot-box">
+                <div class="report-std-screenshot-title">
+                  <span>📜</span>
+                  <span>צילום מסך רשמי מתוך התקן (ת"י) המצורף לליקוי:</span>
+                </div>
+                <div class="report-std-screenshots-grid">
+                  ${stdImgs.map(si => `
+                    <div>
+                      <img src="${escapeHtml(si.url || si)}" class="report-std-thumb" alt="צילום תקן רשמי">
+                      <div style="font-size:7.5pt; color:#475569; margin-top:3px;">${escapeHtml(si.title || '')}</div>
+                    </div>
+                  `).join('')}
+                </div>
               </div>
             `
             : '';
@@ -1212,6 +1252,8 @@ function generateReportDocument() {
                     ${escapeHtml(it.std)}
                   </div>
                 ` : ''}
+
+                ${stdScreenshotsHtml}
 
                 ${it.rec ? `
                   <div class="report-rec-box">
@@ -1237,7 +1279,25 @@ function generateReportDocument() {
       `;
     }).join('')}
 
-    <!-- 5. SIGNATURE & CONCLUSION (סיכום וחתימה) -->
+    <!-- 5. STANDARDS APPENDIX SECTION (נספח תרשימי תקנים ישראליים רשמיים מלא) -->
+    ${allStdScreenshots.length > 0 ? `
+      <div class="page-break-before"></div>
+      <div class="report-sec-heading">נספח א': צילומי מסך ותרשימים מתוך התקנים הישראליים הרשמיים (ת"י) והחוק</div>
+      <div style="font-size:9pt; color:#475569; margin-bottom:14px; line-height:1.5;">
+        להלן צילומי מסך מלאים ומדויקים מתוך נוסחי התקנים הישראליים הרשמיים, תקנות התכנון והבנייה והמפרט הכללי, המבססים את ממצאי הבדיקה ואת דרישות התיקון בחוות הדעת:
+      </div>
+      <div class="standards-appendix-grid">
+        ${allStdScreenshots.map((sc, i) => `
+          <div class="appendix-std-card">
+            <div class="appendix-std-card-title">תרשים תקן ${i + 1}: ${escapeHtml(sc.title)}</div>
+            <div class="appendix-std-card-sub">מתייחס לממצא מס' ${sc.defectNum} (${escapeHtml(sc.room)}) • ${escapeHtml(sc.std)}</div>
+            <img src="${escapeHtml(sc.url)}" class="appendix-std-card-img" alt="צילום מסך תקן ישראלי רשמי">
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+
+    <!-- 6. SIGNATURE & CONCLUSION (סיכום וחתימה) -->
     <div class="report-sig-block">
       <div>
         <div style="font-weight:800; font-size:10.5pt; color:var(--primary);">צ. ביקורת מבנים</div>
@@ -1252,7 +1312,6 @@ function generateReportDocument() {
     </div>
   `;
 }
-
 function printReport() {
   generateReportDocument();
   setTimeout(() => {

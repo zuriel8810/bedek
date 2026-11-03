@@ -141,7 +141,20 @@ window.SHIMON_INSPECTION = {
       "reporto_rec": "",
       "reporto_note": "",
       "reporto_std": "תקן 1555.3 גיליון תיקון מס 1 משנת 2014 סעיף 3.2",
-      "reporto_images": []
+      "reporto_images": [
+        {
+          "id": "std_standards_t1555_3_table_3_hollow_jpeg",
+          "url": "standards/t1555_3_table_3_hollow.jpeg",
+          "title": "תקן 1555 חלק 3 טבלה 3 - דרישות אי-הימצאות חללים ושיעור הדבקה מירבי",
+          "standard": "תקן 1555 חלק 3"
+        },
+        {
+          "id": "std_standards_t1555_3_figure_5_jpeg",
+          "url": "standards/t1555_3_figure_5.jpeg",
+          "title": "תקן 1555 חלק 3 ציור 5 - מישקי הפרדה ואיטום גמיש במפגשי אלמנטים",
+          "standard": "תקן 1555 חלק 3"
+        }
+      ]
     },
     {
       "id": "item_5",
@@ -214,7 +227,20 @@ window.SHIMON_INSPECTION = {
       "reporto_rec": "",
       "reporto_note": "",
       "reporto_std": "",
-      "reporto_images": []
+      "reporto_images": [
+        {
+          "id": "std_standards_t1555_3_table_3_hollow_jpeg",
+          "url": "standards/t1555_3_table_3_hollow.jpeg",
+          "title": "תקן 1555 חלק 3 טבלה 3 - דרישות אי-הימצאות חללים ושיעור הדבקה מירבי",
+          "standard": "תקן 1555 חלק 3"
+        },
+        {
+          "id": "std_standards_t1555_3_figure_5_jpeg",
+          "url": "standards/t1555_3_figure_5.jpeg",
+          "title": "תקן 1555 חלק 3 ציור 5 - מישקי הפרדה ואיטום גמיש במפגשי אלמנטים",
+          "standard": "תקן 1555 חלק 3"
+        }
+      ]
     },
     {
       "id": "item_8",
@@ -372,7 +398,20 @@ window.SHIMON_INSPECTION = {
       "reporto_rec": "",
       "reporto_note": "",
       "reporto_std": "[תקן 1205 חלק 1 סעיף 2.7.3]\n\"בידוד צנרת המיועדת להתקנה גלויה יוגן באמצעות אטיפה ברדיד אלומיניום או בצינור פלסטיק או חומרים אחרים על פי הנחיות מתכנן\"",
-      "reporto_images": []
+      "reporto_images": [
+        {
+          "id": "std_standards_t1205_2_traps_png",
+          "url": "standards/t1205_2_traps.png",
+          "title": "תקן 1205 חלק 2 - קופסאות ביקורת ומחסומי ריח ברצפה",
+          "standard": "תקן 1205 חלק 2"
+        },
+        {
+          "id": "std_standards_t1205_2_corrugated_pipe_jpeg",
+          "url": "standards/t1205_2_corrugated_pipe.jpeg",
+          "title": "תקן 1205 חלק 2 - איסור שימוש בצינור שרשורי גמיש בכיורים ודלוחין",
+          "standard": "תקן 1205 חלק 2"
+        }
+      ]
     },
     {
       "id": "item_14",
@@ -525,7 +564,20 @@ window.SHIMON_INSPECTION = {
       "reporto_rec": "",
       "reporto_note": "",
       "reporto_std": "",
-      "reporto_images": []
+      "reporto_images": [
+        {
+          "id": "std_standards_t1205_2_traps_png",
+          "url": "standards/t1205_2_traps.png",
+          "title": "תקן 1205 חלק 2 - קופסאות ביקורת ומחסומי ריח ברצפה",
+          "standard": "תקן 1205 חלק 2"
+        },
+        {
+          "id": "std_standards_t1205_2_corrugated_pipe_jpeg",
+          "url": "standards/t1205_2_corrugated_pipe.jpeg",
+          "title": "תקן 1205 חלק 2 - איסור שימוש בצינור שרשורי גמיש בכיורים ודלוחין",
+          "standard": "תקן 1205 חלק 2"
+        }
+      ]
     },
     {
       "id": "item_19",
@@ -613,7 +665,20 @@ window.SHIMON_INSPECTION = {
       "reporto_rec": "",
       "reporto_note": "",
       "reporto_std": "",
-      "reporto_images": []
+      "reporto_images": [
+        {
+          "id": "std_standards_t1205_2_traps_png",
+          "url": "standards/t1205_2_traps.png",
+          "title": "תקן 1205 חלק 2 - קופסאות ביקורת ומחסומי ריח ברצפה",
+          "standard": "תקן 1205 חלק 2"
+        },
+        {
+          "id": "std_standards_t1205_2_corrugated_pipe_jpeg",
+          "url": "standards/t1205_2_corrugated_pipe.jpeg",
+          "title": "תקן 1205 חלק 2 - איסור שימוש בצינור שרשורי גמיש בכיורים ודלוחין",
+          "standard": "תקן 1205 חלק 2"
+        }
+      ]
     },
     {
       "id": "item_22",
@@ -726,7 +791,20 @@ window.SHIMON_INSPECTION = {
       "reporto_rec": "",
       "reporto_note": "",
       "reporto_std": "זאת בהתאם לת״י 1205 חלק 3 (2014), סעיף 3.2.9.",
-      "reporto_images": []
+      "reporto_images": [
+        {
+          "id": "std_standards_t1205_2_traps_png",
+          "url": "standards/t1205_2_traps.png",
+          "title": "תקן 1205 חלק 2 - קופסאות ביקורת ומחסומי ריח ברצפה",
+          "standard": "תקן 1205 חלק 2"
+        },
+        {
+          "id": "std_standards_t1205_2_corrugated_pipe_jpeg",
+          "url": "standards/t1205_2_corrugated_pipe.jpeg",
+          "title": "תקן 1205 חלק 2 - איסור שימוש בצינור שרשורי גמיש בכיורים ודלוחין",
+          "standard": "תקן 1205 חלק 2"
+        }
+      ]
     },
     {
       "id": "item_25",
@@ -836,7 +914,20 @@ window.SHIMON_INSPECTION = {
       "reporto_rec": "",
       "reporto_note": "",
       "reporto_std": "הביצוע אינו עומד בדרישות ת״י 1205.0, סעיף 3.1.1, שלפיו יש להתקין את האמבט כמתחייב מהתקנים, ובהיעדר הוראות התקנה – בהתאם להוראות ההתקנה של היצרן. הביצוע סותר גם את ת״י 1205.3, סעיף 3.1, שלפיו קבועות השרברבות ואביזריהן יותקנו על פי תכניות מתכנן המערכת או על פי הוראות היצרן, וכן את הוראות היצרן עצמן. בנוסף, הוא סותר את סעיף 07042 במפרט הכללי, שלפיו \"חיבורי הקבועות לקירות ולרצפות יהיו אטימים חזקים ויציבים\", ואת דרישות הל״ת החלות על העניין. הביצוע אף סותר את פסיקת בית המשפט המחוזי בירושלים בת.א. 1725/86, שבה נקבע כי דיפון המגן על האמבט הוא נוהג בנייה רצוי, המתחייב מעבודה מקצועית טובה; קביעה זו שבה ונקבעה בת.א. 7166/92 בבית משפט השלום בחיפה. כמו כן הוא סותר את פסיקת בתי המשפט בתיקים הבאים: ת.א. 934/85 (בימ״ש המחוזי בחיפה, כב׳ השופטת ט׳ שטרסברג-כהן) ורדי ואח׳ נגד מליבו בע״מ; ת.א. 469/88 (בימ״ש המחוזי בירושלים, כב׳ השופט צבי א׳ טל) זעפרני ואח׳ נגד רמט בע״מ; ת.א. 9342/87 (בימ״ש השלום בת״א, כב׳ השופטת ד״ר ד׳ פלפל) פריינד ואח׳ נגד אליאב בע״מ; ת.א. 2279/01 (בימ״ש השלום בקריות) לובל מאיר ויפעת נגד אברהם יצחק בע״מ; ת.א. 19334/00 (בימ״ש השלום בחיפה, כב׳ השופט א. טובי) קלדרון ישראל וזיוה נגד גלרון בע״מ, שם נקבע: \"נראה לי כי בעניין זה הדין עם התובעים וכי בניית אמבט חלול , גם אם באופן חלקי, אינה עולה בקנה אחד עם רמת ביצוע טובה. אף אם לא מדובר בליקוי הפוגע ביציבות האמבט, די בכך שנגרמת פגיעה בנוחות השימוש על מנת לזכותם בשיפוי...\"",
-      "reporto_images": []
+      "reporto_images": [
+        {
+          "id": "std_standards_t1205_2_traps_png",
+          "url": "standards/t1205_2_traps.png",
+          "title": "תקן 1205 חלק 2 - קופסאות ביקורת ומחסומי ריח ברצפה",
+          "standard": "תקן 1205 חלק 2"
+        },
+        {
+          "id": "std_standards_t1205_2_corrugated_pipe_jpeg",
+          "url": "standards/t1205_2_corrugated_pipe.jpeg",
+          "title": "תקן 1205 חלק 2 - איסור שימוש בצינור שרשורי גמיש בכיורים ודלוחין",
+          "standard": "תקן 1205 חלק 2"
+        }
+      ]
     },
     {
       "id": "item_28",
@@ -856,7 +947,20 @@ window.SHIMON_INSPECTION = {
       "reporto_rec": "",
       "reporto_note": "",
       "reporto_std": "",
-      "reporto_images": []
+      "reporto_images": [
+        {
+          "id": "std_standards_t1205_2_traps_png",
+          "url": "standards/t1205_2_traps.png",
+          "title": "תקן 1205 חלק 2 - קופסאות ביקורת ומחסומי ריח ברצפה",
+          "standard": "תקן 1205 חלק 2"
+        },
+        {
+          "id": "std_standards_t1205_2_corrugated_pipe_jpeg",
+          "url": "standards/t1205_2_corrugated_pipe.jpeg",
+          "title": "תקן 1205 חלק 2 - איסור שימוש בצינור שרשורי גמיש בכיורים ודלוחין",
+          "standard": "תקן 1205 חלק 2"
+        }
+      ]
     },
     {
       "id": "item_29",
@@ -876,7 +980,20 @@ window.SHIMON_INSPECTION = {
       "reporto_rec": "יש להסיר את הברז ואת האבן ולקבע את נקודת המים, ולהתקינה בעומק מתאים כך שלאחר התקנת הברז תהיה הרוזטה בקו 0 עם חיפוי האבן. בשלב הבא יש להתקין סביב נקודת המים אבן שנחתכה באופן אסתטי בכלי מתאים, לבצע איטום ולהרכיב את אביזר הברז הסופי.",
       "reporto_note": "",
       "reporto_std": "",
-      "reporto_images": []
+      "reporto_images": [
+        {
+          "id": "std_standards_t1555_3_table_3_hollow_jpeg",
+          "url": "standards/t1555_3_table_3_hollow.jpeg",
+          "title": "תקן 1555 חלק 3 טבלה 3 - דרישות אי-הימצאות חללים ושיעור הדבקה מירבי",
+          "standard": "תקן 1555 חלק 3"
+        },
+        {
+          "id": "std_standards_t1555_3_figure_5_jpeg",
+          "url": "standards/t1555_3_figure_5.jpeg",
+          "title": "תקן 1555 חלק 3 ציור 5 - מישקי הפרדה ואיטום גמיש במפגשי אלמנטים",
+          "standard": "תקן 1555 חלק 3"
+        }
+      ]
     },
     {
       "id": "item_30",
@@ -921,7 +1038,20 @@ window.SHIMON_INSPECTION = {
         "photos/310096.png",
         "photos/310105.png"
       ],
-      "reporto_images": []
+      "reporto_images": [
+        {
+          "id": "std_standards_t1555_3_table_3_hollow_jpeg",
+          "url": "standards/t1555_3_table_3_hollow.jpeg",
+          "title": "תקן 1555 חלק 3 טבלה 3 - דרישות אי-הימצאות חללים ושיעור הדבקה מירבי",
+          "standard": "תקן 1555 חלק 3"
+        },
+        {
+          "id": "std_standards_t1555_3_figure_5_jpeg",
+          "url": "standards/t1555_3_figure_5.jpeg",
+          "title": "תקן 1555 חלק 3 ציור 5 - מישקי הפרדה ואיטום גמיש במפגשי אלמנטים",
+          "standard": "תקן 1555 חלק 3"
+        }
+      ]
     }
   ]
 };
