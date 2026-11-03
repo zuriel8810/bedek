@@ -312,7 +312,7 @@ function renderReportsList() {
 
       const divider = (idx < list.length - 1) ? '<div class="reporto-card-divider"></div>' : '';
 
-      html += '<div class="reporto-card-item" onclick="openReportInEditor('' + rep.id + '')">' +
+      html += '<div class="reporto-card-item" data-id="' + rep.id + '" onclick="openReportInEditor(this.dataset.id)">' +
         '<div class="rep-row-top">' +
           '<div class="rep-top-right">' +
             '<span class="rep-date">' + dDate + '</span>' +
