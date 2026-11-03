@@ -1,584 +1,1460 @@
+// =========================================================
+// צ. ביקורת מבנים - אפליקציית בדק בית וחוות דעת מומחה (Reporto 1:1)
+// =========================================================
 
-// App State
+// Global State
 let db = window.REPORTO_DB || { repos: [], categories: [], findings: [] };
-let activeTab = 'search';
-let activeRepo = 'all';
+let reportsList = [];
+let activeInspection = null;
+let activeNavTab = 'reports';
 let activeRoom = 'סלון';
-let searchQuery = '';
+let activeStocksRepoIndex = 3; // Default to "מאגר ממצאים בדק בית דירתי"
+let editingItemIndex = -1; // -1 for new item
+let currentModalPhotos = [];
+let chatSelectedImageBase64 = null;
 
+// Standard Default Rooms
 const DEFAULT_ROOMS = [
-  'כניסה / לובי', 'סלון', 'מטבח', 'פינת אוכל', 'מרפסת שמש',
-  'חדר שינה הורים', 'חדר רחצה הורים', 'חדר שינה 1', 'חדר שינה 2',
-  'חדר רחצה כללי', 'חדר שירות / כביסה', 'ממ"ד', 'מסדרון',
-  'חצר / גינה', 'גג', 'מרתף', 'חניה', 'שטחים משותפים', 'כללי'
+  'כניסה / מבואת כניסה', 'סלון', 'מטבח', 'פינת אוכל', 'מרפסת שמש',
+  'ממ"ד', 'חדר שינה הורים', 'חדר רחצה הורים', 'חדר שינה 1', 'חדר שינה 2',
+  'חדר רחצה כללי', 'חדר שירות / כביסה', 'מסדרון', 'חניה',
+  'שטחים משותפים / לובי קומתי', 'חצר / גינה', 'גג', 'כללי'
 ];
 
-let inspection = {
-  id: 'insp_' + Date.now(),
-  clientName: '',
-  clientPhone: '',
-  address: '',
-  propertyType: 'דירת מגורים',
-  date: new Date().toISOString().split('T')[0],
-  inspectorName: 'צוריאל צדוק',
-  inspectorTitle: 'בודק מוסמך ואיתור נזילות',
-  inspectorPhone: '053-9514613',
-  companyName: 'צ. ביקורת מבנים',
-  generalNotes: '',
-  items: []
-};
+let customRooms = [];
 
-// Initialize
+// Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
-  loadSavedInspection();
+  initDbIndex();
+  loadReportsFromStorage();
+  initActiveInspection();
   setupEventListeners();
-  renderRoomBar();
-  renderRepoFilters();
-  renderFindings();
-  updateBadge();
+  renderReportsList();
+  renderInspectionEditor();
+  renderStocksBrowser();
+  updateNavBadges();
 });
 
-// Persistence
-function saveInspection() {
-  try {
-    localStorage.setItem('bedek_active_inspection', JSON.stringify(inspection));
-    updateBadge();
-  } catch (e) {
-    console.error('Storage error:', e);
-  }
+// Build Fast Search Indices for Findings DB
+let indexedFindings = [];
+function initDbIndex() {
+  if (!db || !db.findings) return;
+  indexedFindings = db.findings.map((f, idx) => {
+    const repoName = db.repos[f.r] || '';
+    const catName = db.categories[f.c] || '';
+    const searchText = (f.name + ' ' + (f.std || '') + ' ' + (f.rec || '') + ' ' + catName + ' ' + repoName).toLowerCase();
+    return { ...f, origIndex: idx, repoName, catName, searchText };
+  });
 }
 
-function loadSavedInspection() {
-  const saved = localStorage.getItem('bedek_active_inspection');
+// ---------------------------------------------------------
+// Storage & Reports Management
+// ---------------------------------------------------------
+function loadReportsFromStorage() {
+  const saved = localStorage.getItem('bedek_reports_list');
   if (saved) {
     try {
-      inspection = JSON.parse(saved);
-      const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
-      setVal('input-client-name', inspection.clientName);
-      setVal('input-client-phone', inspection.clientPhone);
-      setVal('input-address', inspection.address);
-      setVal('input-property-type', inspection.propertyType || 'דירת מגורים');
-      setVal('input-date', inspection.date);
-      setVal('input-general-notes', inspection.generalNotes);
-    } catch(e) {
-      console.error(e);
+      reportsList = JSON.parse(saved);
+    } catch (e) {
+      console.error('Error loading reports list from storage', e);
+      reportsList = [];
     }
   }
-}
 
-function updateBadge() {
-  const badge = document.getElementById('badge-count');
-  if (badge) {
-    badge.textContent = inspection.items.length;
-    badge.style.display = inspection.items.length > 0 ? 'inline-block' : 'none';
+  // Pre-populate with Shimon Meir Cohen Kadosh report if empty
+  if (reportsList.length === 0 && window.SHIMON_INSPECTION) {
+    reportsList.push(JSON.parse(JSON.stringify(window.SHIMON_INSPECTION)));
+    saveReportsToStorage();
   }
 }
 
-// Navigation Tabs
-function switchTab(tab) {
-  activeTab = tab;
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === tab);
-  });
-  document.querySelectorAll('.tab-content').forEach(content => {
-    content.classList.toggle('active', content.id === 'tab-' + tab);
-  });
-  
-  if (tab === 'inspection') {
-    renderInspectionItems();
-  } else if (tab === 'report') {
-    generateReportPreview();
+function saveReportsToStorage() {
+  try {
+    localStorage.setItem('bedek_reports_list', JSON.stringify(reportsList));
+  } catch (e) {
+    console.warn('LocalStorage limit reached when saving reports list', e);
   }
 }
 
-// Room Bar
-function renderRoomBar() {
-  const bar = document.getElementById('room-bar');
-  if (!bar) return;
-  bar.innerHTML = '';
-  DEFAULT_ROOMS.forEach(room => {
-    const pill = document.createElement('div');
-    pill.className = 'room-pill' + (room === activeRoom ? ' selected' : '');
-    pill.textContent = room;
-    pill.onclick = () => {
-      activeRoom = room;
-      renderRoomBar();
-    };
-    bar.appendChild(pill);
-  });
-}
-
-// Repo Filters
-function renderRepoFilters() {
-  const container = document.getElementById('repo-filters');
-  if (!container) return;
-  container.innerHTML = '';
-  
-  const allBtn = document.createElement('button');
-  allBtn.className = 'filter-btn' + (activeRepo === 'all' ? ' active' : '');
-  allBtn.textContent = 'הכל (' + db.findings.length + ')';
-  allBtn.onclick = () => { activeRepo = 'all'; renderRepoFilters(); renderFindings(); };
-  container.appendChild(allBtn);
-
-  db.repos.forEach((repoName, idx) => {
-    const count = db.findings.filter(f => f.r === idx).length;
-    if (count === 0) return;
-    const btn = document.createElement('button');
-    btn.className = 'filter-btn' + (activeRepo === idx ? ' active' : '');
-    let shortName = repoName.replace('מאגר ממצאים - ', '').replace('מאגר ממצאים ', '');
-    btn.textContent = shortName + ' (' + count + ')';
-    btn.onclick = () => { activeRepo = idx; renderRepoFilters(); renderFindings(); };
-    container.appendChild(btn);
-  });
-}
-
-// Render Findings List
-function renderFindings() {
-  const list = document.getElementById('findings-list');
-  if (!list) return;
-  list.innerHTML = '';
-
-  const q = searchQuery.trim().toLowerCase();
-  let filtered = db.findings.filter(f => {
-    if (activeRepo !== 'all' && f.r !== activeRepo) return false;
-    if (!q) return true;
-    const catName = db.categories[f.c] || '';
-    return f.name.toLowerCase().includes(q) ||
-           (f.std && f.std.toLowerCase().includes(q)) ||
-           catName.toLowerCase().includes(q);
-  });
-
-  const countEl = document.getElementById('results-count');
-  if (countEl) {
-    countEl.textContent = 'נמצאו ' + filtered.length + ' ממצאים';
+function initActiveInspection() {
+  const activeId = localStorage.getItem('bedek_active_report_id');
+  if (activeId && reportsList.length > 0) {
+    const found = reportsList.find(r => r.id === activeId);
+    if (found) {
+      activeInspection = found;
+      collectCustomRooms();
+      return;
+    }
   }
 
-  const slice = filtered.slice(0, 30);
-  if (slice.length === 0) {
-    list.innerHTML = '<div style="text-align:center; padding: 30px; color:#64748b;">לא נמצאו ממצאים מתאימים לחיפוש.</div>';
+  if (reportsList.length > 0) {
+    activeInspection = reportsList[0];
+  } else {
+    activeInspection = createDefaultInspectionObj('דוח חדש', 'רחוב ראשי 1, ישראל');
+    reportsList.push(activeInspection);
+    saveReportsToStorage();
+  }
+  localStorage.setItem('bedek_active_report_id', activeInspection.id);
+  collectCustomRooms();
+}
+
+function createDefaultInspectionObj(clientName, address) {
+  return {
+    id: 'insp_' + Date.now(),
+    clientName: clientName || '',
+    clientPhone: '',
+    address: address || '',
+    propertyType: 'דירת מגורים (חדשה מקבלן)',
+    date: new Date().toISOString().split('T')[0],
+    inspectorName: 'צוריאל צדוק',
+    inspectorTitle: 'בודק מוסמך ואיתור נזילות',
+    inspectorPhone: '053-9514613',
+    companyName: 'צ. ביקורת מבנים',
+    status: 'טיוטה',
+    generalNotes: 'חוות דעת מומחה לבית משפט - ביקורת מבנים ובדק בית',
+    items: []
+  };
+}
+
+function collectCustomRooms() {
+  if (!activeInspection || !activeInspection.items) return;
+  const existingRooms = new Set(DEFAULT_ROOMS);
+  activeInspection.items.forEach(item => {
+    if (item.room && !existingRooms.has(item.room) && !customRooms.includes(item.room)) {
+      customRooms.push(item.room);
+    }
+  });
+}
+
+function saveActiveInspection() {
+  if (!activeInspection) return;
+  const idx = reportsList.findIndex(r => r.id === activeInspection.id);
+  if (idx !== -1) {
+    reportsList[idx] = activeInspection;
+  } else {
+    reportsList.push(activeInspection);
+  }
+  saveReportsToStorage();
+  updateNavBadges();
+}
+
+// ---------------------------------------------------------
+// Navigation (Reporto 1:1)
+// ---------------------------------------------------------
+function switchNavTab(tabName) {
+  activeNavTab = tabName;
+
+  // Update Top Nav Tabs
+  document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+
+  // Update Bottom Nav Tabs (Mobile)
+  document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+
+  // Switch Active Main Section
+  document.querySelectorAll('.tab-content').forEach(section => {
+    section.classList.remove('active');
+  });
+
+  const activeSection = document.getElementById('tab-' + tabName);
+  if (activeSection) {
+    activeSection.classList.add('active');
+  }
+
+  // Trigger relevant view renderers
+  if (tabName === 'reports') renderReportsList();
+  if (tabName === 'editor') renderInspectionEditor();
+  if (tabName === 'stocks') renderStocksBrowser();
+  if (tabName === 'report') generateReportDocument();
+  if (tabName === 'chat') scrollChatToBottom();
+
+  window.scrollTo(0, 0);
+}
+
+function updateNavBadges() {
+  const reportsCount = reportsList.length;
+  const itemsCount = activeInspection && activeInspection.items ? activeInspection.items.length : 0;
+
+  const bReports = document.getElementById('top-badge-reports');
+  if (bReports) bReports.textContent = reportsCount;
+
+  const bEditor = document.getElementById('top-badge-editor');
+  if (bEditor) bEditor.textContent = itemsCount;
+}
+
+// ---------------------------------------------------------
+// SCREEN 1: Reports Dashboard (דוחות)
+// ---------------------------------------------------------
+let currentReportsFilter = 'all';
+
+function filterReports(status, btnElement) {
+  currentReportsFilter = status;
+  document.querySelectorAll('.reports-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btnElement) btnElement.classList.add('active');
+  renderReportsList();
+}
+
+function renderReportsList() {
+  const tbody = document.getElementById('reports-table-body');
+  if (!tbody) return;
+
+  const searchVal = (document.getElementById('reports-search-input')?.value || '').trim().toLowerCase();
+
+  let filtered = reportsList.filter(rep => {
+    if (currentReportsFilter === 'draft' && rep.status === 'הושלם') return false;
+    if (currentReportsFilter === 'completed' && rep.status !== 'הושלם') return false;
+    if (searchVal) {
+      const match = (rep.clientName || '').toLowerCase().includes(searchVal) ||
+                    (rep.address || '').toLowerCase().includes(searchVal) ||
+                    (rep.date || '').includes(searchVal);
+      if (!match) return false;
+    }
+    return true;
+  });
+
+  // Update stats cards
+  const totalReps = reportsList.length;
+  const inProg = reportsList.filter(r => r.status !== 'הושלם').length;
+  const comp = reportsList.filter(r => r.status === 'הושלם').length;
+  let totalFindingsCount = 0;
+  reportsList.forEach(r => totalFindingsCount += (r.items ? r.items.length : 0));
+
+  if (document.getElementById('stat-total-reports')) document.getElementById('stat-total-reports').textContent = totalReps;
+  if (document.getElementById('stat-in-progress')) document.getElementById('stat-in-progress').textContent = inProg;
+  if (document.getElementById('stat-completed')) document.getElementById('stat-completed').textContent = comp;
+  if (document.getElementById('stat-total-findings')) document.getElementById('stat-total-findings').textContent = totalFindingsCount;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">
+          לא נמצאו דוחות תואמים. לחץ על "+ דוח חדש" כדי להתחיל בדיקה חדשה.
+        </td>
+      </tr>
+    `;
     return;
   }
 
-  slice.forEach(f => {
-    const isAdded = inspection.items.some(it => it.findingId === f.id && it.room === activeRoom);
-    const catName = db.categories[f.c] || '';
-    const item = document.createElement('div');
-    item.className = 'finding-item' + (isAdded ? ' added' : '');
-    
-    let stdHtml = '';
-    if (f.std) {
-      stdHtml = '<div class="finding-details"><div class="finding-std">📜 <b>תקן:</b> ' + escapeHtml(f.std) + '</div>' + 
-                (f.rec ? '<div class="finding-rec">🔧 <b>תיקון:</b> ' + escapeHtml(f.rec) + '</div>' : '') + '</div>';
+  tbody.innerHTML = filtered.map(rep => {
+    const isCurrentActive = activeInspection && activeInspection.id === rep.id;
+    const itemsCount = rep.items ? rep.items.length : 0;
+    let totalCost = 0;
+    if (rep.items) {
+      rep.items.forEach(it => {
+        totalCost += (Number(it.price) || 0) * (Number(it.qty) || 1);
+      });
     }
 
-    item.innerHTML = 
-      '<div class="finding-header">' +
-        '<div>' +
-          '<div class="finding-title">' + escapeHtml(f.name) + '</div>' +
-          '<div class="finding-meta">📁 ' + escapeHtml(catName) + (f.ut ? ' • ' + f.ut : '') + '</div>' +
-        '</div>' +
-      '</div>' +
-      stdHtml +
-      '<div class="finding-actions">' +
-        '<button class="btn btn-primary" onclick="openAddModal(\'' + f.id + '\')">' +
-          (isAdded ? '✓ נוסף ל' + activeRoom : '+ הוסף ל' + activeRoom) +
-        '</button>' +
-      '</div>';
-    list.appendChild(item);
+    const isCompleted = rep.status === 'הושלם';
+    const statusPillHtml = isCompleted
+      ? `<span class="status-pill status-completed"><span class="status-dot"></span>הושלם</span>`
+      : `<span class="status-pill status-in-progress"><span class="status-dot"></span>בעבודה</span>`;
+
+    return `
+      <tr style="${isCurrentActive ? 'background:#fdfaf3;' : ''}">
+        <td>
+          <div style="font-weight:700; color:var(--primary); font-size:0.95rem;">${escapeHtml(rep.clientName || 'ללא שם לקוח')}</div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">${escapeHtml(rep.address || 'ללא כתובת')}</div>
+        </td>
+        <td style="font-size:0.82rem; color:#475569;">
+          ${escapeHtml(rep.propertyType || 'בדק בית')}
+        </td>
+        <td>${statusPillHtml}</td>
+        <td style="font-weight:700;">${itemsCount} ליקויים</td>
+        <td style="font-weight:700; color:var(--primary);">₪${totalCost.toLocaleString('he-IL')}</td>
+        <td style="font-size:0.82rem; color:var(--text-muted);">${escapeHtml(rep.date || '')}</td>
+        <td style="text-align:left;">
+          <div style="display:inline-flex; gap:6px;">
+            <button type="button" class="btn btn-sm btn-primary" onclick="openReportInEditor('${rep.id}')" title="פתח בדיקה בעורך">
+              ✏️ ערוך
+            </button>
+            <button type="button" class="btn btn-sm btn-gold" onclick="openReportInPreview('${rep.id}')" title="צפה והפק דוח PDF">
+              📄 דוח
+            </button>
+            <button type="button" class="btn btn-sm btn-outline" style="color:var(--danger);" onclick="deleteReport('${rep.id}')" title="מחק דוח">
+              🗑️
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openReportInEditor(reportId) {
+  const found = reportsList.find(r => r.id === reportId);
+  if (found) {
+    activeInspection = found;
+    localStorage.setItem('bedek_active_report_id', found.id);
+    collectCustomRooms();
+    renderInspectionEditor();
+    switchNavTab('editor');
+  }
+}
+
+function openReportInPreview(reportId) {
+  const found = reportsList.find(r => r.id === reportId);
+  if (found) {
+    activeInspection = found;
+    localStorage.setItem('bedek_active_report_id', found.id);
+    collectCustomRooms();
+    switchNavTab('report');
+  }
+}
+
+function deleteReport(reportId) {
+  if (!confirm('האם אתה בטוח שברצונך למחוק דוח זה? הפעולה אינה ניתנת לביטול.')) return;
+  reportsList = reportsList.filter(r => r.id !== reportId);
+  saveReportsToStorage();
+  if (activeInspection && activeInspection.id === reportId) {
+    initActiveInspection();
+  }
+  renderReportsList();
+  renderInspectionEditor();
+}
+
+function openNewReportModal() {
+  document.getElementById('new-client-name').value = '';
+  document.getElementById('new-client-phone').value = '';
+  document.getElementById('new-address').value = '';
+  document.getElementById('new-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('new-general-notes').value = '';
+  document.getElementById('modal-new-report').classList.add('active');
+}
+
+function closeNewReportModal() {
+  document.getElementById('modal-new-report').classList.remove('active');
+}
+
+function createNewReportSubmit() {
+  const clientName = document.getElementById('new-client-name').value.trim();
+  const clientPhone = document.getElementById('new-client-phone').value.trim();
+  const address = document.getElementById('new-address').value.trim();
+  const propertyType = document.getElementById('new-property-type').value;
+  const date = document.getElementById('new-date').value;
+  const generalNotes = document.getElementById('new-general-notes').value.trim();
+
+  if (!clientName || !address) {
+    alert('נא למלא שם לקוח וכתובת נכס כדי להתחיל בדיקה.');
+    return;
+  }
+
+  const newInsp = createDefaultInspectionObj(clientName, address);
+  newInsp.clientPhone = clientPhone;
+  newInsp.propertyType = propertyType;
+  newInsp.date = date;
+  newInsp.generalNotes = generalNotes || 'חוות דעת מומחה לבית משפט - ביקורת מבנים ובדק בית';
+
+  reportsList.unshift(newInsp);
+  activeInspection = newInsp;
+  localStorage.setItem('bedek_active_report_id', newInsp.id);
+  saveReportsToStorage();
+
+  closeNewReportModal();
+  renderReportsList();
+  renderInspectionEditor();
+  switchNavTab('editor');
+}
+
+// ---------------------------------------------------------
+// SCREEN 2: Inspection Editor (עורך בדיקה לפי חדרים 1:1)
+// ---------------------------------------------------------
+function renderInspectionEditor() {
+  if (!activeInspection) return;
+
+  // Header Banner Details
+  document.getElementById('editor-insp-client').textContent = activeInspection.clientName || 'ללא שם לקוח';
+  document.getElementById('editor-insp-address').textContent = activeInspection.address || 'ללא כתובת נכס';
+
+  const totalItems = activeInspection.items ? activeInspection.items.length : 0;
+  let totalCost = 0;
+  if (activeInspection.items) {
+    activeInspection.items.forEach(it => {
+      totalCost += (Number(it.price) || 0) * (Number(it.qty) || 1);
+    });
+  }
+  document.getElementById('editor-metric-items').textContent = totalItems;
+  document.getElementById('editor-metric-cost').textContent = '₪' + totalCost.toLocaleString('he-IL');
+
+  // Render Horizontal Rooms Bar (Reporto 1:1)
+  renderRoomsBar();
+
+  // Render Defect Cards in Active Room
+  renderActiveRoomFindings();
+}
+
+function getAllAvailableRooms() {
+  const set = new Set([...DEFAULT_ROOMS, ...customRooms]);
+  if (activeInspection && activeInspection.items) {
+    activeInspection.items.forEach(it => {
+      if (it.room) set.add(it.room);
+    });
+  }
+  return Array.from(set);
+}
+
+function renderRoomsBar() {
+  const container = document.getElementById('editor-room-bar');
+  if (!container) return;
+
+  const allRooms = getAllAvailableRooms();
+
+  // If activeRoom is not set or not in list, set to first
+  if (!activeRoom || !allRooms.includes(activeRoom)) {
+    activeRoom = allRooms[0] || 'סלון';
+  }
+
+  // Count items per room
+  const roomCounts = {};
+  if (activeInspection && activeInspection.items) {
+    activeInspection.items.forEach(it => {
+      const rm = it.room || 'כללי';
+      roomCounts[rm] = (roomCounts[rm] || 0) + 1;
+    });
+  }
+
+  let html = allRooms.map(rm => {
+    const isActive = rm === activeRoom;
+    const count = roomCounts[rm] || 0;
+    const hasItems = count > 0;
+    return `
+      <button type="button" class="room-tab-btn ${isActive ? 'active' : ''} ${hasItems ? 'has-items' : ''}" onclick="selectActiveRoom('${escapeHtml(rm)}')">
+        <span>${escapeHtml(rm)}</span>
+        <span class="room-tab-count">${count}</span>
+      </button>
+    `;
+  }).join('');
+
+  html += `
+    <button type="button" class="btn-add-room" onclick="promptAddNewRoom()">
+      <span>➕ הוסף חדר</span>
+    </button>
+  `;
+
+  container.innerHTML = html;
+}
+
+function selectActiveRoom(roomName) {
+  activeRoom = roomName;
+  renderRoomsBar();
+  renderActiveRoomFindings();
+}
+
+function promptAddNewRoom() {
+  const newName = prompt('הזן את שם החדר / החלל החדש לבדיקה (למשל: יחידת דיור, מחסן, חצר קדמית):');
+  if (newName && newName.trim()) {
+    const trimmed = newName.trim();
+    if (!customRooms.includes(trimmed)) {
+      customRooms.push(trimmed);
+    }
+    selectActiveRoom(trimmed);
+  }
+}
+
+function renderActiveRoomFindings() {
+  const container = document.getElementById('room-findings-list');
+  const titleEl = document.getElementById('active-room-title');
+  const summaryEl = document.getElementById('active-room-summary');
+
+  if (titleEl) titleEl.textContent = activeRoom;
+
+  if (!activeInspection || !activeInspection.items) {
+    if (container) container.innerHTML = '';
+    return;
+  }
+
+  // Filter items in active room
+  const roomItems = [];
+  activeInspection.items.forEach((it, idx) => {
+    if ((it.room || 'כללי') === activeRoom) {
+      roomItems.push({ item: it, index: idx });
+    }
   });
 
-  if (filtered.length > 30) {
-    const more = document.createElement('div');
-    more.style.textAlign = 'center';
-    more.style.padding = '15px';
-    more.innerHTML = '<span style="color:#64748b; font-size:0.85rem;">מוצגים 30 מתוך ' + filtered.length + '. דייק את החיפוש לתוצאות נוספות.</span>';
-    list.appendChild(more);
+  let roomTotal = 0;
+  roomItems.forEach(({ item }) => {
+    roomTotal += (Number(item.price) || 0) * (Number(item.qty) || 1);
+  });
+
+  if (summaryEl) {
+    summaryEl.textContent = `(${roomItems.length} ליקויים • ₪${roomTotal.toLocaleString('he-IL')})`;
   }
+
+  if (roomItems.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="text-align:center; padding:35px 20px; color:var(--text-muted); background:#ffffff;">
+        <div style="font-size:2.2rem; margin-bottom:10px;">📋</div>
+        <div style="font-weight:700; font-size:1.05rem; color:var(--text); margin-bottom:6px;">אין עדיין ליקויים ב${escapeHtml(activeRoom)}</div>
+        <div style="font-size:0.85rem; margin-bottom:16px;">
+          לחץ על "➕ הוסף ממצא לחדר" כדי לבחור מתוך 1,773 הממצאים בריפורטו, או סרוק תמונה באמצעות ה-AI.
+        </div>
+        <button type="button" class="btn btn-primary" onclick="openAddFindingModal()">
+          <span>➕ הוסף ממצא ראשון ל${escapeHtml(activeRoom)}</span>
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  // Render modular defect cards (note:9210)
+  container.innerHTML = roomItems.map(({ item, index }, cardIdx) => {
+    const qty = Number(item.qty) || 1;
+    const price = Number(item.price) || 0;
+    const total = qty * price;
+
+    const photosHtml = (item.photos && item.photos.length > 0)
+      ? item.photos.map(p => `<img src="${escapeHtml(p)}" class="defect-photo-thumb" onclick="openImageLightbox('${escapeHtml(p)}')">`).join('')
+      : '';
+
+    return `
+      <div class="defect-card">
+        <div class="defect-card-header">
+          <div class="defect-card-title-wrap">
+            <span class="defect-num-badge">#${cardIdx + 1}</span>
+            <div class="defect-card-title">${escapeHtml(item.title || '')}</div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn btn-sm btn-outline" onclick="openEditFindingModal(${index})">✏️ ערוך</button>
+            <button type="button" class="btn btn-sm btn-outline" style="color:var(--danger);" onclick="deleteFinding(${index})">🗑️</button>
+          </div>
+        </div>
+
+        <div class="defect-card-body">
+          ${item.std ? `
+            <div class="defect-section-box defect-box-std">
+              <div class="defect-box-title">📜 דרישת התקן הישראלי הרשמי (ת"י) / החוק:</div>
+              <div>${escapeHtml(item.std)}</div>
+            </div>
+          ` : ''}
+
+          ${item.rec ? `
+            <div class="defect-section-box defect-box-rec">
+              <div class="defect-box-title">🛠️ אופן התיקון והמלצה מקצועית:</div>
+              <div>${escapeHtml(item.rec)}</div>
+            </div>
+          ` : ''}
+
+          ${item.note ? `
+            <div class="defect-section-box defect-box-note">
+              <div class="defect-box-title">✍️ הערת בודק מהשטח:</div>
+              <div>${escapeHtml(item.note)}</div>
+            </div>
+          ` : ''}
+
+          <!-- Cost Calculation Strip -->
+          <div class="defect-cost-strip">
+            <div>
+              <span>כמות: <b>${qty} ${escapeHtml(item.unit || "יח'")}</b></span>
+              <span style="margin-right:12px;">מחיר יח': <b>₪${price.toLocaleString('he-IL')}</b></span>
+            </div>
+            <div class="defect-cost-total">
+              סה"כ: ₪${total.toLocaleString('he-IL')}
+            </div>
+          </div>
+
+          <!-- Photos -->
+          ${photosHtml ? `
+            <div class="defect-photos-strip">
+              ${photosHtml}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
-// Modal Editor
-let currentEditingItem = null;
+// ---------------------------------------------------------
+// ADD FINDING MODAL (1:1 Selection from 1,773 Reporto findings)
+// ---------------------------------------------------------
+function openAddFindingModal() {
+  document.getElementById('select-finding-room-title').textContent = `➕ הוספת ממצא ל${activeRoom}`;
+  document.getElementById('modal-finding-search').value = '';
 
-function openAddModal(findingId) {
-  const f = db.findings.find(x => x.id === findingId);
-  if (!f) return;
+  // Populate Repo select
+  const repoSelect = document.getElementById('modal-filter-repo');
+  if (repoSelect && repoSelect.options.length <= 1) {
+    db.repos.forEach((rp, idx) => {
+      const opt = document.createElement('option');
+      opt.value = idx;
+      opt.textContent = rp;
+      repoSelect.appendChild(opt);
+    });
+  }
 
-  currentEditingItem = {
-    id: 'it_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-    findingId: f.id,
-    room: activeRoom,
-    title: f.name,
-    std: f.std || '',
-    rec: f.rec || '',
-    price: f.up || 0,
-    qty: 1,
-    unit: f.ut || 'יח\'',
-    note: '',
-    photos: []
-  };
+  // Populate Category select
+  const catSelect = document.getElementById('modal-filter-cat');
+  if (catSelect && catSelect.options.length <= 1) {
+    db.categories.forEach((cat, idx) => {
+      const opt = document.createElement('option');
+      opt.value = idx;
+      opt.textContent = cat;
+      catSelect.appendChild(opt);
+    });
+  }
 
-  populateModal(currentEditingItem);
-  document.getElementById('modal-overlay').classList.add('active');
+  document.getElementById('modal-select-finding').classList.add('active');
+  filterModalFindings();
 }
 
-function openEditItemModal(itemId) {
-  const item = inspection.items.find(x => x.id === itemId);
-  if (!item) return;
-
-  currentEditingItem = item;
-  populateModal(currentEditingItem);
-  document.getElementById('modal-overlay').classList.add('active');
+function closeSelectFindingModal() {
+  document.getElementById('modal-select-finding').classList.remove('active');
 }
 
-function populateModal(item) {
-  document.getElementById('modal-title').textContent = 'עריכת ליקוי לבדיקה';
-  document.getElementById('modal-room').value = item.room;
-  document.getElementById('modal-item-title').value = item.title;
-  document.getElementById('modal-std').value = item.std;
-  document.getElementById('modal-rec').value = item.rec;
-  document.getElementById('modal-price').value = item.price || 0;
-  document.getElementById('modal-qty').value = item.qty || 1;
-  document.getElementById('modal-unit').value = item.unit || 'יח';
-  document.getElementById('modal-note').value = item.note || '';
+function filterModalFindings() {
+  const searchVal = (document.getElementById('modal-finding-search')?.value || '').trim().toLowerCase();
+  const repoFilter = document.getElementById('modal-filter-repo')?.value;
+  const catFilter = document.getElementById('modal-filter-cat')?.value;
+  const resultsContainer = document.getElementById('modal-findings-results');
+
+  let matches = indexedFindings.filter(f => {
+    if (repoFilter && repoFilter !== 'all' && Number(f.r) !== Number(repoFilter)) return false;
+    if (catFilter && catFilter !== 'all' && Number(f.c) !== Number(catFilter)) return false;
+    if (searchVal) {
+      if (!f.searchText.includes(searchVal)) return false;
+    }
+    return true;
+  });
+
+  const displayMatches = matches.slice(0, 50);
+
+  if (displayMatches.length === 0) {
+    resultsContainer.innerHTML = `
+      <div style="text-align:center; padding:20px; color:var(--text-muted);">
+        לא נמצאו ממצאים מתאימים. נסה מילות חיפוש אחרות או לחץ על "ליקוי ידני מותאם אישית".
+      </div>
+    `;
+    return;
+  }
+
+  resultsContainer.innerHTML = displayMatches.map(f => {
+    return `
+      <div class="repo-finding-row" style="cursor:pointer;" onclick="selectFindingFromRepo(${f.origIndex})">
+        <div class="repo-finding-content">
+          <div style="font-size:0.75rem; color:var(--gold-dark); font-weight:700;">${escapeHtml(f.catName)} • ${escapeHtml(f.repoName)}</div>
+          <div class="repo-finding-title">${escapeHtml(f.name)}</div>
+          ${f.std ? `<div class="repo-finding-std">📜 ${escapeHtml(f.std.slice(0, 160))}...</div>` : ''}
+          ${f.rec ? `<div class="repo-finding-rec">🛠️ ${escapeHtml(f.rec.slice(0, 140))}...</div>` : ''}
+        </div>
+        <button type="button" class="btn btn-sm btn-gold" style="white-space:nowrap;">
+          ➕ בחר
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectFindingFromRepo(findingIndex) {
+  const finding = db.findings[findingIndex];
+  if (!finding) return;
+
+  closeSelectFindingModal();
+
+  // Open Edit modal with preloaded finding
+  editingItemIndex = -1;
+  document.getElementById('edit-modal-title').textContent = `הוספת ממצא ל${activeRoom}`;
+  document.getElementById('form-item-title').value = finding.name || '';
+  document.getElementById('form-item-std').value = finding.std || '';
+  document.getElementById('form-item-rec').value = finding.rec || '';
+  document.getElementById('form-item-note').value = finding.note || '';
+  document.getElementById('form-item-price').value = finding.up || 350;
+  document.getElementById('form-item-qty').value = finding.uq || 1;
+  document.getElementById('form-item-unit').value = finding.ut || "יח'";
+  calculateModalTotal();
+
+  currentModalPhotos = [];
   renderModalPhotos();
+
+  document.getElementById('btn-delete-finding').style.display = 'none';
+  document.getElementById('modal-edit-finding').classList.add('active');
 }
 
-function closeModal() {
-  document.getElementById('modal-overlay').classList.remove('active');
-  currentEditingItem = null;
+function openCustomFindingModal() {
+  closeSelectFindingModal();
+  editingItemIndex = -1;
+  document.getElementById('edit-modal-title').textContent = `ליקוי מותאם אישית ב${activeRoom}`;
+  document.getElementById('form-item-title').value = '';
+  document.getElementById('form-item-std').value = '';
+  document.getElementById('form-item-rec').value = '';
+  document.getElementById('form-item-note').value = '';
+  document.getElementById('form-item-price').value = 400;
+  document.getElementById('form-item-qty').value = 1;
+  document.getElementById('form-item-unit').value = "יח'";
+  calculateModalTotal();
+
+  currentModalPhotos = [];
+  renderModalPhotos();
+
+  document.getElementById('btn-delete-finding').style.display = 'none';
+  document.getElementById('modal-edit-finding').classList.add('active');
 }
 
-function saveModalItem() {
-  if (!currentEditingItem) return;
+function openEditFindingModal(itemIndex) {
+  if (!activeInspection || !activeInspection.items || !activeInspection.items[itemIndex]) return;
+  const item = activeInspection.items[itemIndex];
+  editingItemIndex = itemIndex;
 
-  currentEditingItem.room = document.getElementById('modal-room').value;
-  currentEditingItem.title = document.getElementById('modal-item-title').value.trim();
-  currentEditingItem.std = document.getElementById('modal-std').value.trim();
-  currentEditingItem.rec = document.getElementById('modal-rec').value.trim();
-  currentEditingItem.price = parseFloat(document.getElementById('modal-price').value) || 0;
-  currentEditingItem.qty = parseFloat(document.getElementById('modal-qty').value) || 1;
-  currentEditingItem.unit = document.getElementById('modal-unit').value.trim();
-  currentEditingItem.note = document.getElementById('modal-note').value.trim();
+  document.getElementById('edit-modal-title').textContent = `עריכת ליקוי ב${item.room || activeRoom}`;
+  document.getElementById('form-item-title').value = item.title || '';
+  document.getElementById('form-item-std').value = item.std || '';
+  document.getElementById('form-item-rec').value = item.rec || '';
+  document.getElementById('form-item-note').value = item.note || '';
+  document.getElementById('form-item-price').value = item.price || 0;
+  document.getElementById('form-item-qty').value = item.qty || 1;
+  document.getElementById('form-item-unit').value = item.unit || "יח'";
+  calculateModalTotal();
 
-  const existingIdx = inspection.items.findIndex(x => x.id === currentEditingItem.id);
-  if (existingIdx >= 0) {
-    inspection.items[existingIdx] = currentEditingItem;
-  } else {
-    inspection.items.push(currentEditingItem);
-  }
+  currentModalPhotos = item.photos ? [...item.photos] : [];
+  renderModalPhotos();
 
-  saveInspection();
-  closeModal();
-  renderFindings();
-  if (activeTab === 'inspection') renderInspectionItems();
+  document.getElementById('btn-delete-finding').style.display = 'block';
+  document.getElementById('modal-edit-finding').classList.add('active');
 }
 
-function deleteModalItem() {
-  if (!currentEditingItem) return;
-  if (!confirm('האם להסיר ליקוי זה מהבדיקה?')) return;
-  
-  inspection.items = inspection.items.filter(x => x.id !== currentEditingItem.id);
-  saveInspection();
-  closeModal();
-  renderFindings();
-  if (activeTab === 'inspection') renderInspectionItems();
+function closeEditModal() {
+  document.getElementById('modal-edit-finding').classList.remove('active');
 }
 
-// Photos
-function handlePhotoUpload(event) {
+function calculateModalTotal() {
+  const p = Number(document.getElementById('form-item-price')?.value) || 0;
+  const q = Number(document.getElementById('form-item-qty')?.value) || 1;
+  const total = p * q;
+  document.getElementById('form-item-total').value = '₪' + total.toLocaleString('he-IL');
+}
+
+function handleFindingPhotoUpload(event) {
   const files = event.target.files;
   if (!files || files.length === 0) return;
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
+  Array.from(files).forEach(file => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      compressImage(e.target.result, 1280, 0.75, (compressed) => {
-        if (!currentEditingItem.photos) currentEditingItem.photos = [];
-        currentEditingItem.photos.push(compressed);
+      compressImage(e.target.result, 1200, 0.8, (compressed) => {
+        currentModalPhotos.push(compressed);
         renderModalPhotos();
       });
     };
     reader.readAsDataURL(file);
-  }
-  event.target.value = '';
+  });
 }
 
-function compressImage(base64, maxDim, quality, callback) {
+function compressImage(base64Str, maxDimension, quality, callback) {
   const img = new Image();
-  img.src = base64;
+  img.src = base64Str;
   img.onload = () => {
-    let w = img.width;
-    let h = img.height;
-    if (w > maxDim || h > maxDim) {
-      if (w > h) {
-        h = Math.round((h * maxDim) / w);
-        w = maxDim;
+    let width = img.width;
+    let height = img.height;
+    if (width > maxDimension || height > maxDimension) {
+      if (width > height) {
+        height = Math.round((height * maxDimension) / width);
+        width = maxDimension;
       } else {
-        w = Math.round((w * maxDim) / h);
-        h = maxDim;
+        width = Math.round((width * maxDimension) / height);
+        height = maxDimension;
       }
     }
     const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, w, h);
+    ctx.drawImage(img, 0, 0, width, height);
     callback(canvas.toDataURL('image/jpeg', quality));
   };
 }
 
 function renderModalPhotos() {
-  const container = document.getElementById('modal-photos-grid');
+  const container = document.getElementById('form-photos-grid');
   if (!container) return;
-  container.innerHTML = '';
-  
-  (currentEditingItem.photos || []).forEach((photoData, idx) => {
-    const wrap = document.createElement('div');
-    wrap.className = 'photo-wrapper';
-    wrap.innerHTML = '<img src="' + photoData + '" class="photo-thumb"><button type="button" class="photo-delete" onclick="removePhoto(' + idx + ')">✕</button>';
-    container.appendChild(wrap);
-  });
+
+  container.innerHTML = currentModalPhotos.map((p, idx) => {
+    return `
+      <div style="position:relative; display:inline-block;">
+        <img src="${escapeHtml(p)}" class="defect-photo-thumb">
+        <button type="button" onclick="removeModalPhoto(${idx})" style="position:absolute; top:-6px; right:-6px; background:var(--danger); color:#fff; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-size:12px; line-height:1;">✕</button>
+      </div>
+    `;
+  }).join('');
 }
 
-function removePhoto(idx) {
-  if (currentEditingItem && currentEditingItem.photos) {
-    currentEditingItem.photos.splice(idx, 1);
-    renderModalPhotos();
-  }
+function removeModalPhoto(index) {
+  currentModalPhotos.splice(index, 1);
+  renderModalPhotos();
 }
 
-// Render Inspection Items
-function renderInspectionItems() {
-  const container = document.getElementById('inspection-items-list');
-  if (!container) return;
-  container.innerHTML = '';
+function saveFindingModalSubmit() {
+  const title = document.getElementById('form-item-title').value.trim();
+  const std = document.getElementById('form-item-std').value.trim();
+  const rec = document.getElementById('form-item-rec').value.trim();
+  const note = document.getElementById('form-item-note').value.trim();
+  const price = Number(document.getElementById('form-item-price').value) || 0;
+  const qty = Number(document.getElementById('form-item-qty').value) || 1;
+  const unit = document.getElementById('form-item-unit').value.trim() || "יח'";
 
-  if (inspection.items.length === 0) {
-    container.innerHTML = 
-      '<div class="card" style="text-align:center; padding: 40px 20px; color:#64748b;">' +
-        '<div style="font-size:2rem; margin-bottom:10px;">📋</div>' +
-        '<h3>טרם נוספו ליקויים לבדיקה</h3>' +
-        '<p style="margin-top:8px; font-size:0.9rem;">עבור ללשונית "מאגר ממצאים" ובחר ליקויים לחללים השונים.</p>' +
-        '<button class="btn btn-primary" style="margin-top:16px;" onclick="switchTab(\'search\')">פתח מאגר ממצאים</button>' +
-      '</div>';
+  if (!title) {
+    alert('נא להזין תיאור ליקוי.');
     return;
   }
 
-  const roomsMap = {};
-  inspection.items.forEach(it => {
-    if (!roomsMap[it.room]) roomsMap[it.room] = [];
-    roomsMap[it.room].push(it);
-  });
+  if (!activeInspection.items) activeInspection.items = [];
 
-  let totalCost = 0;
+  const findingData = {
+    id: editingItemIndex >= 0 ? activeInspection.items[editingItemIndex].id : 'item_' + Date.now(),
+    room: editingItemIndex >= 0 ? activeInspection.items[editingItemIndex].room : activeRoom,
+    title,
+    std,
+    rec,
+    note,
+    price,
+    qty,
+    unit,
+    photos: [...currentModalPhotos]
+  };
 
-  Object.keys(roomsMap).forEach(roomName => {
-    const items = roomsMap[roomName];
-    const groupCard = document.createElement('div');
-    groupCard.className = 'card';
-    let cardContent = '<h3 style="color:var(--primary); border-bottom:2px solid var(--accent-light); padding-bottom:6px; margin-bottom:12px;">📍 ' + escapeHtml(roomName) + ' (' + items.length + ')</h3>';
-    
-    items.forEach(it => {
-      const itemCost = (it.price || 0) * (it.qty || 1);
-      totalCost += itemCost;
-      
-      let photosHtml = '';
-      if (it.photos && it.photos.length > 0) {
-        photosHtml = '<div style="display:flex; gap:6px; margin-top:6px;">' +
-          it.photos.map(p => '<img src="' + p + '" style="width:45px; height:45px; border-radius:6px; object-fit:cover; border:1px solid #cbd5e1;">').join('') +
-          '</div>';
-      }
+  if (editingItemIndex >= 0) {
+    activeInspection.items[editingItemIndex] = findingData;
+  } else {
+    activeInspection.items.push(findingData);
+  }
 
-      cardContent += 
-        '<div style="border-bottom:1px solid #f1f5f9; padding:10px 0;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:flex-start;">' +
-            '<div style="font-weight:600; font-size:0.95rem;">' + escapeHtml(it.title) + '</div>' +
-            '<button class="btn btn-outline" style="padding:4px 8px; font-size:0.75rem;" onclick="openEditItemModal(\'' + it.id + '\')">✏️ ערוך</button>' +
-          '</div>' +
-          (it.std ? '<div style="font-size:0.8rem; color:#1e3a8a; margin-top:4px;">📜 ' + escapeHtml(it.std.substring(0, 80)) + '...</div>' : '') +
-          '<div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#64748b; margin-top:6px;">' +
-            '<span>כמות: ' + it.qty + ' ' + it.unit + (it.price ? ' • ' + it.price + ' ₪' : '') + '</span>' +
-            (itemCost > 0 ? '<b style="color:#0f2942;">סה"כ: ' + itemCost.toLocaleString() + ' ₪</b>' : '') +
-          '</div>' +
-          photosHtml +
-        '</div>';
-    });
-
-    groupCard.innerHTML = cardContent;
-    container.appendChild(groupCard);
-  });
-
-  const summaryCard = document.createElement('div');
-  summaryCard.className = 'card';
-  summaryCard.style.background = '#0f2942';
-  summaryCard.style.color = '#fff';
-  summaryCard.innerHTML = 
-    '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-      '<div>' +
-        '<div style="font-size:0.85rem; color:#94a3b8;">סה"כ ממצאים</div>' +
-        '<div style="font-size:1.3rem; font-weight:bold;">' + inspection.items.length + ' ליקויים</div>' +
-      '</div>' +
-      '<div style="text-align:left;">' +
-        '<div style="font-size:0.85rem; color:#94a3b8;">אומדן עלויות (לפני מע"מ)</div>' +
-        '<div style="font-size:1.3rem; font-weight:bold; color:#38bdf8;">' + totalCost.toLocaleString() + ' ₪</div>' +
-      '</div>' +
-    '</div>';
-  container.prepend(summaryCard);
+  saveActiveInspection();
+  closeEditModal();
+  renderInspectionEditor();
 }
 
-// Generate Printable / Preview Report
-function generateReportPreview() {
-  const container = document.getElementById('report-preview-container');
-  const printView = document.getElementById('print-view');
-  if (!container || !printView) return;
+function deleteFinding(itemIndex) {
+  if (!confirm('האם למחוק ממצא זה?')) return;
+  activeInspection.items.splice(itemIndex, 1);
+  saveActiveInspection();
+  renderInspectionEditor();
+}
 
-  let totalCost = 0;
-  let itemsHtml = '';
-  let costTableRows = '';
-  let itemCounter = 1;
+function deleteActiveFinding() {
+  if (editingItemIndex >= 0) {
+    deleteFinding(editingItemIndex);
+    closeEditModal();
+  }
+}
 
-  const roomsMap = {};
-  inspection.items.forEach(it => {
-    if (!roomsMap[it.room]) roomsMap[it.room] = [];
-    roomsMap[it.room].push(it);
+// ---------------------------------------------------------
+// SCREEN 3: Repositories Browser (מאגרים 1:1 Reporto)
+// ---------------------------------------------------------
+function renderStocksBrowser() {
+  renderStocksRepoTabs();
+  renderStocksCategoryList();
+}
+
+function renderStocksRepoTabs() {
+  const container = document.getElementById('stocks-repo-tabs');
+  if (!container || !db.repos) return;
+
+  container.innerHTML = db.repos.map((rp, idx) => {
+    const isActive = idx === activeStocksRepoIndex;
+    return `
+      <button type="button" class="repo-tab-pill ${isActive ? 'active' : ''}" onclick="selectStocksRepo(${idx})">
+        ${escapeHtml(rp)}
+      </button>
+    `;
+  }).join('');
+}
+
+function selectStocksRepo(idx) {
+  activeStocksRepoIndex = idx;
+  renderStocksRepoTabs();
+  renderStocksCategoryList();
+}
+
+function renderStocksCategoryList() {
+  const container = document.getElementById('stocks-categories-list');
+  const summaryEl = document.getElementById('stocks-count-summary');
+  if (!container) return;
+
+  const searchVal = (document.getElementById('stocks-search-input')?.value || '').trim().toLowerCase();
+
+  // Filter findings in active repository
+  const repoFindings = indexedFindings.filter(f => Number(f.r) === Number(activeStocksRepoIndex));
+
+  // If searchVal, match across findings
+  const matchedFindings = searchVal
+    ? repoFindings.filter(f => f.searchText.includes(searchVal))
+    : repoFindings;
+
+  if (summaryEl) {
+    summaryEl.textContent = `נמצאו ${matchedFindings.length} ממצאים במאגר נבחר`;
+  }
+
+  // Group by category
+  const catGroups = {};
+  matchedFindings.forEach(f => {
+    const cat = f.catName || 'כללי';
+    if (!catGroups[cat]) catGroups[cat] = [];
+    catGroups[cat].push(f);
   });
 
-  Object.keys(roomsMap).forEach(roomName => {
-    const items = roomsMap[roomName];
-    itemsHtml += '<h2 style="color:#0f2942; border-bottom: 2px solid #2563eb; padding-bottom: 6px; margin: 24px 0 16px 0;">פרק: ' + escapeHtml(roomName) + '</h2>';
-    
-    items.forEach(it => {
-      const itemCost = (it.price || 0) * (it.qty || 1);
-      totalCost += itemCost;
+  const categories = Object.keys(catGroups);
 
-      costTableRows += 
-        '<tr>' +
-          '<td style="text-align:center;">' + itemCounter + '</td>' +
-          '<td>' + escapeHtml(roomName) + '</td>' +
-          '<td>' + escapeHtml(it.title) + '</td>' +
-          '<td style="text-align:center;">' + it.qty + ' ' + escapeHtml(it.unit) + '</td>' +
-          '<td style="text-align:left;">' + (it.price ? it.price.toLocaleString() + ' ₪' : '-') + '</td>' +
-          '<td style="text-align:left;">' + (itemCost > 0 ? itemCost.toLocaleString() + ' ₪' : '-') + '</td>' +
-        '</tr>';
+  if (categories.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:30px; color:var(--text-muted);">
+        לא נמצאו ממצאים מתאימים לחיפוש זה.
+      </div>
+    `;
+    return;
+  }
 
-      let photosHtml = '';
-      if (it.photos && it.photos.length > 0) {
-        photosHtml = '<div class="report-photos">' + 
-          it.photos.map((p, pIdx) => '<div style="text-align:center;"><img src="' + p + '" class="report-img"><div style="font-size:8pt; color:#64748b;">תמונה ' + itemCounter + '.' + (pIdx+1) + '</div></div>').join('') +
-          '</div>';
-      }
+  container.innerHTML = categories.map((catName, catIdx) => {
+    const findings = catGroups[catName];
+    return `
+      <div class="category-accordion-card" id="cat-card-${catIdx}">
+        <div class="category-accordion-header" onclick="toggleCategoryAccordion('cat-card-${catIdx}')">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span>📁</span>
+            <span>${escapeHtml(catName)}</span>
+          </div>
+          <span class="category-badge-count">${findings.length} ממצאים</span>
+        </div>
+        <div class="category-accordion-body">
+          ${findings.map((f, fIdx) => `
+            <div class="repo-finding-row">
+              <div class="repo-finding-content">
+                <div class="repo-finding-title">${fIdx + 1}. ${escapeHtml(f.name)}</div>
+                ${f.std ? `<div class="repo-finding-std">📜 <b>תקן:</b> ${escapeHtml(f.std)}</div>` : ''}
+                ${f.rec ? `<div class="repo-finding-rec">🛠️ <b>תיקון:</b> ${escapeHtml(f.rec)}</div>` : ''}
+              </div>
+              <button type="button" class="btn btn-sm btn-gold" onclick="addFindingDirectlyToActiveRoom(${f.origIndex})">
+                ➕ הוסף ל${escapeHtml(activeRoom)}
+              </button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
-      itemsHtml += 
-        '<div class="report-finding">' +
-          '<div class="report-finding-header">' +
-            '<span>סעיף ' + itemCounter + ': ' + escapeHtml(it.title) + ' (' + escapeHtml(roomName) + ')</span>' +
-            (itemCost > 0 ? '<span>אומדן: ' + itemCost.toLocaleString() + ' ₪</span>' : '') +
-          '</div>' +
-          '<div class="report-finding-body">' +
-            (it.std ? '<div style="margin-bottom:8px; color:#1e3a8a;"><b>דרישת התקן / הדין:</b><br>' + escapeHtml(it.std).replace(/\n/g, '<br>') + '</div>' : '') +
-            (it.rec ? '<div style="margin-bottom:8px; color:#065f46;"><b>הנחיה לתיקון:</b><br>' + escapeHtml(it.rec).replace(/\n/g, '<br>') + '</div>' : '') +
-            (it.note ? '<div style="margin-bottom:8px; color:#475569;"><b>הערת בודק:</b> ' + escapeHtml(it.note) + '</div>' : '') +
-            photosHtml +
-          '</div>' +
-        '</div>';
-      itemCounter++;
-    });
+function toggleCategoryAccordion(cardId) {
+  const card = document.getElementById(cardId);
+  if (card) card.classList.toggle('open');
+}
+
+function addFindingDirectlyToActiveRoom(findingIndex) {
+  const finding = db.findings[findingIndex];
+  if (!finding || !activeInspection) return;
+
+  if (!activeInspection.items) activeInspection.items = [];
+
+  const newItem = {
+    id: 'item_' + Date.now(),
+    room: activeRoom,
+    title: finding.name || '',
+    std: finding.std || '',
+    rec: finding.rec || '',
+    note: finding.note || '',
+    price: finding.up || 350,
+    qty: finding.uq || 1,
+    unit: finding.ut || "יח'",
+    photos: []
+  };
+
+  activeInspection.items.push(newItem);
+  saveActiveInspection();
+  alert(`הממצא נוסף בהצלחה לחדר "${activeRoom}"!`);
+}
+
+// ---------------------------------------------------------
+// SCREEN 4: Report Generation (הפקת דוח A4 1:1 Reporto)
+// ---------------------------------------------------------
+function generateReportDocument() {
+  const paper = document.getElementById('report-paper');
+  if (!paper || !activeInspection) return;
+
+  const items = activeInspection.items || [];
+
+  // Group items by room
+  const itemsByRoom = {};
+  items.forEach(it => {
+    const rm = it.room || 'כללי';
+    if (!itemsByRoom[rm]) itemsByRoom[rm] = [];
+    itemsByRoom[rm].push(it);
   });
 
-  const fullReportHtml = 
-    '<div class="report-page report-cover">' +
-      '<div>' +
-        '<div class="report-cover-logo">צ. ביקורת מבנים</div>' +
-        '<div style="font-size:12pt; color:#64748b; margin-top:6px;">ביקורת מבנים • איתור נזילות • ייעוץ הנדסי</div>' +
-      '</div>' +
-      '<div>' +
-        '<div class="report-cover-title">חוות דעת מומחה<br>לביקורת מבנה ואיתור ליקויים</div>' +
-        '<table class="report-details-table">' +
-          '<tr><td class="label">שם המזמין:</td><td><b>' + escapeHtml(inspection.clientName || 'ישראל ישראלי') + '</b></td></tr>' +
-          '<tr><td class="label">כתובת הנכס:</td><td><b>' + escapeHtml(inspection.address || 'לא צוינה כתובת') + '</b></td></tr>' +
-          '<tr><td class="label">סוג הנכס:</td><td>' + escapeHtml(inspection.propertyType || 'דירת מגורים') + '</td></tr>' +
-          '<tr><td class="label">תאריך הבדיקה:</td><td>' + escapeHtml(inspection.date || '') + '</td></tr>' +
-          '<tr><td class="label">שם הבודק:</td><td><b>' + escapeHtml(inspection.inspectorName) + '</b>, ' + escapeHtml(inspection.inspectorTitle) + '</td></tr>' +
-          '<tr><td class="label">טלפון ליצירת קשר:</td><td>' + escapeHtml(inspection.inspectorPhone) + '</td></tr>' +
-        '</table>' +
-      '</div>' +
-      '<div style="font-size:10pt; color:#475569; border-top:1px solid #cbd5e1; padding-top:12px;">' +
-        'דוח זה מהווה חוות דעת מומחה ערוכה לפי פקודת הראיות [נוסח חדש], התשל"א-1971.' +
-      '</div>' +
-    '</div>' +
-    '<div class="report-page">' +
-      '<h2 style="color:#0f2942; border-bottom:2px solid #0f2942; padding-bottom:8px;">הצהרת מומחה לבית המשפט</h2>' +
-      '<p style="margin: 16px 0; font-size:10.5pt; text-align:justify; line-height:1.7;">' +
-        'אני הח"מ, <b>' + escapeHtml(inspection.inspectorName) + '</b>, נותן חוות דעתי זו במקום עדות בבית המשפט, ומצהיר בזאת כי ידוע לי היטב, שלעניין הוראות החוק הפלילי בדבר עדות שקר בשבועה בבית המשפט, דין חוות דעתי זו כשהיא חתומה על ידי כדין עדות בשבועה שנתתי בבית המשפט.<br><br>' +
-        'הבדיקה נערכה בהתאם לתקנות התכנון והבנייה, הוראות למתקני תברואה (הל"ת), מפרטי מכון התקנים הישראלי (ת"י) וכללי המקצוע המקובלים.' +
-      '</p>' +
-      '<h3 style="color:#0f2942; margin-top:24px;">רקע כללי ותיאור הנכס</h3>' +
-      '<p style="margin: 8px 0; font-size:10.5pt;">' +
-        'בתאריך <b>' + escapeHtml(inspection.date) + '</b> נערכה ביקורת בנכס בכתובת <b>' + escapeHtml(inspection.address) + '</b>.<br>' +
-        (inspection.generalNotes ? '<b>הערות רקע:</b> ' + escapeHtml(inspection.generalNotes) : '') +
-      '</p>' +
-      '<div style="margin-top:30px; background:#f8fafc; border:1px solid #cbd5e1; padding:16px; border-radius:6px;">' +
-        '<h4 style="margin-bottom:8px;">ריכוז כמותי:</h4>' +
-        '<div>סך הכל נמצאו: <b>' + inspection.items.length + '</b> ליקויי בנייה ואי התאמות בתקנים.</div>' +
-      '</div>' +
-    '</div>' +
-    '<div class="report-page">' +
-      itemsHtml +
-    '</div>' +
-    '<div class="report-page">' +
-      '<h2 style="color:#0f2942; border-bottom:2px solid #0f2942; padding-bottom:8px;">אומדן עלויות תיקון הליקויים</h2>' +
-      '<table class="cost-summary-table">' +
-        '<thead>' +
-          '<tr>' +
-            '<th style="width:5%;">#</th>' +
-            '<th style="width:20%;">מיקום</th>' +
-            '<th>תיאור הליקוי</th>' +
-            '<th style="width:12%;">כמות</th>' +
-            '<th style="width:15%;">מחיר יח\'</th>' +
-            '<th style="width:15%;">סה"כ</th>' +
-          '</tr>' +
-        '</thead>' +
-        '<tbody>' +
-          (costTableRows || '<tr><td colspan="6" style="text-align:center;">לא הוזנו עלויות</td></tr>') +
-          '<tr style="background:#f1f5f9; font-weight:bold;">' +
-            '<td colspan="5" style="text-align:left;">סה"כ ביצוע ישיר (לפני מע"מ):</td>' +
-            '<td style="text-align:left;">' + totalCost.toLocaleString() + ' ₪</td>' +
-          '</tr>' +
-          '<tr>' +
-            '<td colspan="5" style="text-align:left;">פיקוח הנדסי (10%):</td>' +
-            '<td style="text-align:left;">' + Math.round(totalCost * 0.1).toLocaleString() + ' ₪</td>' +
-          '</tr>' +
-          '<tr style="background:#e2e8f0; font-size:11pt; font-weight:bold;">' +
-            '<td colspan="5" style="text-align:left;">סה"כ כולל פיקוח הנדסי (לפני מע"מ):</td>' +
-            '<td style="text-align:left; color:#1e3a8a;">' + Math.round(totalCost * 1.1).toLocaleString() + ' ₪</td>' +
-          '</tr>' +
-        '</tbody>' +
-      '</table>' +
-      '<div style="margin-top:60px; display:flex; justify-content:space-between; align-items:flex-end;">' +
-        '<div>' +
-          '<div>תאריך: <b>' + escapeHtml(inspection.date) + '</b></div>' +
-        '</div>' +
-        '<div style="text-align:center;">' +
-          '<div style="font-size:12pt; font-weight:bold;">' + escapeHtml(inspection.inspectorName) + '</div>' +
-          '<div style="font-size:10pt; color:#64748b;">' + escapeHtml(inspection.inspectorTitle) + '</div>' +
-          '<div style="margin-top:30px; border-top:1px dashed #000; width:180px; padding-top:4px;">חתימת המומחה</div>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
+  // Calculate totals
+  let grandTotal = 0;
+  let totalFindings = items.length;
+  items.forEach(it => {
+    grandTotal += (Number(it.price) || 0) * (Number(it.qty) || 1);
+  });
 
-  container.innerHTML = fullReportHtml;
-  printView.innerHTML = fullReportHtml;
+  const vatAmount = grandTotal * 0.18;
+  const grandTotalWithVat = grandTotal + vatAmount;
+
+  paper.innerHTML = `
+    <!-- 1. COVER PAGE (שער מהודר) -->
+    <div class="report-cover">
+      <div class="report-cover-brand">🏗️ צ. ביקורת מבנים</div>
+      <div class="report-cover-tagline">בדק בית • איתור נזילות • חוות דעת מומחה לבית משפט</div>
+      <div style="font-size:8.5pt; color:var(--text-muted); margin-bottom:12px;">
+        בס"ד | טלפון: 053-9514613 | דוא"ל: zadok8810@gmail.com
+      </div>
+
+      <div class="report-cover-title">
+        חוות דעת מומחה לבית משפט - ביקורת מבנים ובדק בית
+      </div>
+      <div style="font-size:9.5pt; color:#475569; font-weight:600; margin-bottom:20px;">
+        ערוכה לפי סעיף 24 לפקודת הראיות [נוסח חדש], תשל"א-1971
+      </div>
+
+      <!-- Metadata Table -->
+      <table class="report-meta-table">
+        <tr>
+          <th>שם המזמין / לקוח:</th>
+          <td><b>${escapeHtml(activeInspection.clientName || '—')}</b></td>
+          <th>תאריך הבדיקה:</th>
+          <td>${escapeHtml(activeInspection.date || '—')}</td>
+        </tr>
+        <tr>
+          <th>כתובת הנכס הנבדק:</th>
+          <td>${escapeHtml(activeInspection.address || '—')}</td>
+          <th>סוג הנכס:</th>
+          <td>${escapeHtml(activeInspection.propertyType || '—')}</td>
+        </tr>
+        <tr>
+          <th>שם הבודק המומחה:</th>
+          <td><b>צוריאל צדוק</b></td>
+          <th>הסמכה ותפקיד:</th>
+          <td>בודק מוסמך ואיתור נזילות (צ. ביקורת מבנים)</td>
+        </tr>
+        <tr>
+          <th>טלפון להתקשרות:</th>
+          <td>053-9514613</td>
+          <th>סטטוס הדוח:</th>
+          <td>דוח סופי ומאושר לעיון ובית משפט</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- 2. DECLARATION OF EXPERT (הצהרת מומחה לפי פקודת הראיות) -->
+    <div class="report-declaration-box">
+      <div style="font-weight:800; font-size:10pt; color:var(--primary); margin-bottom:8px;">
+        📜 הצהרת המומחה על פי פקודת הראיות:
+      </div>
+      <div style="margin-bottom:8px;">
+        אני החתום מטה, <b>צוריאל צדוק</b>, בודק מוסמך בתחום ביקורת מבנים ואיתור נזילות, נותן חוות דעתי זו במקום עדות בבית המשפט, ומצהיר בזאת כי ידוע לי היטב שלעניין הוראות החוק הפלילי בדבר עדות שקר בשבועה בבית המשפט, דין חוות דעתי זו כשהיא חתומה על ידי כדין עדות בשבועה שניתנה בבית המשפט.
+      </div>
+      <div style="margin-bottom:8px;">
+        <b>כלי ומכשירי המדידה ששימשו בבדיקה:</b> מצלמה תרמית מקצועית, מד לחות דיגיטלי מתקדם (פרוטימטר), פלס לייזר ומד שיפועים דיגיטלי, מד מרחק לייזר מכויל, פנס בדיקה בעוצמה גבוהה וציוד בדיקת לחצים.
+      </div>
+      <div>
+        <b>בסיס הבדיקה והתקנים:</b> חוק המכר (דירות), תשל"ג-1973; תקנות התכנון והבנייה; תקני מכון התקנים הישראלי (ת"י); המפרט הכללי לעבודות בנייה; והוראות למתקני תברואה (הל"ת).
+      </div>
+    </div>
+
+    <!-- 3. SUMMARY TABLE BY ROOM (טבלת ריכוז ליקויים ואומדן עלויות) -->
+    <div class="report-sec-heading">טבלת ריכוז ממצאים ואומדן עלויות לפי חללים</div>
+    <table class="report-summary-table">
+      <thead>
+        <tr>
+          <th style="width:10%;">מס'</th>
+          <th style="width:40%;">שם החלל / החדר</th>
+          <th style="width:25%;">כמות ליקויים</th>
+          <th style="width:25%;">אומדן עלות תיקון (₪)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${Object.keys(itemsByRoom).map((rm, idx) => {
+          const rmItems = itemsByRoom[rm];
+          let rmCost = 0;
+          rmItems.forEach(it => {
+            rmCost += (Number(it.price) || 0) * (Number(it.qty) || 1);
+          });
+          return `
+            <tr>
+              <td>${idx + 1}</td>
+              <td><b>${escapeHtml(rm)}</b></td>
+              <td>${rmItems.length} ליקויים</td>
+              <td>₪${rmCost.toLocaleString('he-IL')}</td>
+            </tr>
+          `;
+        }).join('')}
+        <tr class="total-row">
+          <td colspan="2"><b>סה"כ כללי (לפני מע"מ)</b></td>
+          <td><b>${totalFindings} ליקויים</b></td>
+          <td><b>₪${grandTotal.toLocaleString('he-IL')}</b></td>
+        </tr>
+        <tr style="background:#f8fafc; font-weight:700;">
+          <td colspan="3">מע"מ כחוק (18%)</td>
+          <td>₪${vatAmount.toLocaleString('he-IL', { maximumFractionDigits: 0 })}</td>
+        </tr>
+        <tr style="background:#f1f5f9; font-weight:900; font-size:11pt; color:var(--primary);">
+          <td colspan="3"><b>סה"כ אומדן עלויות תיקון כולל מע"מ</b></td>
+          <td><b>₪${grandTotalWithVat.toLocaleString('he-IL', { maximumFractionDigits: 0 })}</b></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 4. DETAILED FINDINGS BY ROOM (פירוט מלא של כל הממצאים) -->
+    <div class="page-break-before"></div>
+    <div class="report-sec-heading">פירוט מלא של הממצאים, התקנים והנחיות התיקון</div>
+
+    ${Object.keys(itemsByRoom).map(rm => {
+      const rmItems = itemsByRoom[rm];
+      return `
+        <div style="margin-top:20px; margin-bottom:12px;">
+          <div style="background:var(--primary); color:#ffffff; padding:6px 12px; border-radius:4px; font-weight:800; font-size:11pt;">
+            📍 חלל: ${escapeHtml(rm)} (${rmItems.length} ממצאים)
+          </div>
+        </div>
+
+        ${rmItems.map((it, itemIdx) => {
+          const q = Number(it.qty) || 1;
+          const p = Number(it.price) || 0;
+          const tot = q * p;
+
+          const photosHtml = (it.photos && it.photos.length > 0)
+            ? `
+              <div class="report-photos-grid">
+                ${it.photos.map(src => `<img src="${escapeHtml(src)}" class="report-photo-img">`).join('')}
+              </div>
+            `
+            : '';
+
+          return `
+            <div class="report-defect-card">
+              <div class="report-defect-head">
+                <div>ממצא ${itemIdx + 1}: ${escapeHtml(it.title || '')}</div>
+                <div style="font-size:8.5pt;">חלל: ${escapeHtml(rm)}</div>
+              </div>
+              <div class="report-defect-body">
+                ${photosHtml}
+
+                ${it.std ? `
+                  <div class="report-std-box">
+                    <b>📜 דרישת התקן הישראלי הרשמי (ת"י) / החוק:</b><br>
+                    ${escapeHtml(it.std)}
+                  </div>
+                ` : ''}
+
+                ${it.rec ? `
+                  <div class="report-rec-box">
+                    <b>🛠️ אופן התיקון והמלצה מקצועית:</b><br>
+                    ${escapeHtml(it.rec)}
+                  </div>
+                ` : ''}
+
+                ${it.note ? `
+                  <div style="font-size:8.5pt; color:#475569; margin-top:6px;">
+                    <b>הערת הבודק:</b> ${escapeHtml(it.note)}
+                  </div>
+                ` : ''}
+              </div>
+
+              <div class="report-defect-footer">
+                <div>כמות: <b>${q} ${escapeHtml(it.unit || "יח'")}</b> | מחיר יח': <b>₪${p.toLocaleString('he-IL')}</b></div>
+                <div>אומדן עלות לתיקון: <b>₪${tot.toLocaleString('he-IL')}</b></div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      `;
+    }).join('')}
+
+    <!-- 5. SIGNATURE & CONCLUSION (סיכום וחתימה) -->
+    <div class="report-sig-block">
+      <div>
+        <div style="font-weight:800; font-size:10.5pt; color:var(--primary);">צ. ביקורת מבנים</div>
+        <div style="font-size:8.5pt; color:var(--text-muted);">שירותי בדק בית, איתור נזילות וליקויי בנייה</div>
+        <div style="font-size:8.5pt; color:var(--text-muted);">תאריך הפקה: ${new Date().toLocaleDateString('he-IL')}</div>
+      </div>
+      <div style="text-align:left;">
+        <div style="font-size:9.5pt; font-weight:800; color:var(--primary);">צוריאל צדוק</div>
+        <div style="font-size:8.5pt; color:#475569;">בודק מוסמך ואיתור נזילות</div>
+        <div style="margin-top:6px; font-family:cursive; font-size:14pt; color:#0f2942;">צוריאל צדוק</div>
+      </div>
+    </div>
+  `;
 }
 
 function printReport() {
-  generateReportPreview();
-  window.print();
+  generateReportDocument();
+  setTimeout(() => {
+    window.print();
+  }, 200);
 }
 
-function escapeHtml(text) {
-  if (!text) return '';
-  return String(text)
+function exportInspectionJSON() {
+  if (!activeInspection) return;
+  const jsonStr = JSON.stringify(activeInspection, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `bedek_report_${(activeInspection.clientName || 'report').replace(/\s+/g, '_')}_${activeInspection.date || 'date'}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// ---------------------------------------------------------
+// SCREEN 5: AI Chat & Vision (עוזר AI)
+// ---------------------------------------------------------
+function handleChatImageSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    compressImage(e.target.result, 1024, 0.75, (compressed) => {
+      chatSelectedImageBase64 = compressed;
+      document.getElementById('chat-preview-img').src = compressed;
+      document.getElementById('chat-image-preview-strip').style.display = 'flex';
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearChatImage() {
+  chatSelectedImageBase64 = null;
+  document.getElementById('chat-image-preview-strip').style.display = 'none';
+  document.getElementById('chat-file-input').value = '';
+}
+
+function startVisionScan() {
+  switchNavTab('chat');
+  document.getElementById('chat-file-input').click();
+}
+
+async function sendChatMessage() {
+  const inputEl = document.getElementById('chat-input-text');
+  const userText = inputEl.value.trim();
+  const hasImage = !!chatSelectedImageBase64;
+
+  if (!userText && !hasImage) return;
+
+  // Append user bubble
+  appendChatBubble('user', userText, chatSelectedImageBase64);
+  inputEl.value = '';
+  const sentImage = chatSelectedImageBase64;
+  clearChatImage();
+
+  // Show typing indicator
+  const typingId = 'typing_' + Date.now();
+  appendChatTyping(typingId);
+
+  // Call Client AI (Gemini or OpenAI)
+  const apiKey = localStorage.getItem('bedek_ai_api_key') || '';
+  const provider = localStorage.getItem('bedek_ai_provider') || 'gemini';
+
+  if (!apiKey) {
+    removeChatTyping(typingId);
+    appendChatBubble('bot', `
+      <b>נא להזין מפתח API:</b> לצורך ניתוח תמונות בשטח מול מודלי AI (Gemini או OpenAI), לחץ על כפתור <b>⚙️ מפתח API</b> למעלה והזן מפתח אישי.
+      <br><br>
+      <i>בינתיים, איתרתי במאגר 1,773 התקנים את ההתאמה הקרובה ביותר לטקסט שכתבת:</i>
+    `);
+    // Fallback local match
+    showLocalMatchInChat(userText);
+    return;
+  }
+
+  try {
+    const aiResponse = await callClientAi(provider, apiKey, userText, sentImage);
+    removeChatTyping(typingId);
+    appendChatBubble('bot', aiResponse);
+  } catch (err) {
+    removeChatTyping(typingId);
+    console.error('AI call error:', err);
+    appendChatBubble('bot', `שגיאה בתקשורת מול ה-AI: ${err.message}. מציג תוצאות ממאגר התקנים המקומי:`);
+    showLocalMatchInChat(userText);
+  }
+}
+
+function showLocalMatchInChat(query) {
+  if (!query) return;
+  const q = query.toLowerCase();
+  const matches = indexedFindings.filter(f => f.searchText.includes(q)).slice(0, 3);
+  if (matches.length > 0) {
+    const html = matches.map(m => `
+      <div style="background:#f1f5f9; padding:8px 10px; border-radius:6px; margin-top:8px; border-right:3px solid var(--primary);">
+        <b>${escapeHtml(m.name)}</b><br>
+        <small>📜 ${escapeHtml((m.std || '').slice(0, 120))}</small><br>
+        <button type="button" class="btn btn-sm btn-gold" style="margin-top:6px;" onclick="addFindingDirectlyToActiveRoom(${m.origIndex})">
+          ➕ הוסף ל${escapeHtml(activeRoom)}
+        </button>
+      </div>
+    `).join('');
+    appendChatBubble('bot', html);
+  }
+}
+
+async function callClientAi(provider, apiKey, promptText, imageBase64) {
+  const systemPrompt = `אתה מומחה בכיר לבדק בית, ביקורת מבנים ואיתור נזילות של עסק 'צ. ביקורת מבנים' בבעלות צוריאל צדוק.
+חוק ברזל מחייב: איסור מוחלט על שימוש במילים משורש ה.נ.ד.ס! זהו דוח בדק בית וחוות דעת מומחה לבית משפט.
+נתח את התמונה או השאלה, ציין את שם הליקוי, דרישת התקן הישראלי הרשמי (ת"י), אופן התיקון המקצועי ואומדן מחיר מוערך בש"ח.`;
+
+  if (provider === 'gemini') {
+    const model = 'gemini-1.5-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    const parts = [];
+    if (imageBase64) {
+      const b64Data = imageBase64.split(',')[1] || imageBase64;
+      parts.push({
+        inline_data: {
+          mime_type: 'image/jpeg',
+          data: b64Data
+        }
+      });
+    }
+    parts.push({ text: systemPrompt + '\n\n' + (promptText || 'זהה ליקויים בתמונה זו והתאם לתקן הישראלי:') });
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts }] })
+    });
+
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.error?.message || res.statusText);
+    }
+
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || 'לא התקבלה תשובה מ-Gemini.';
+  } else {
+    // OpenAI fallback
+    const url = 'https://api.openai.com/v1/chat/completions';
+    const messages = [{ role: 'system', content: systemPrompt }];
+
+    const content = [];
+    if (promptText) content.push({ type: 'text', text: promptText });
+    if (imageBase64) {
+      content.push({ type: 'image_url', image_url: { url: imageBase64 } });
+    }
+    messages.push({ role: 'user', content });
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages,
+        max_tokens: 800
+      })
+    });
+
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.error?.message || res.statusText);
+    }
+
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || 'לא התקבלה תשובה מ-OpenAI.';
+  }
+}
+
+function appendChatBubble(role, textHtml, imageBase64) {
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+
+  const isUser = role === 'user';
+  const bubble = document.createElement('div');
+  bubble.style.marginBottom = '12px';
+  bubble.style.display = 'flex';
+  bubble.style.flexDirection = 'column';
+  bubble.style.alignItems = isUser ? 'flex-start' : 'flex-end';
+
+  let imgHtml = imageBase64 ? `<img src="${imageBase64}" style="max-width:180px; border-radius:6px; margin-bottom:6px; border:1px solid var(--border);">` : '';
+
+  bubble.innerHTML = `
+    <div style="background:${isUser ? '#0f2942' : '#ffffff'}; color:${isUser ? '#ffffff' : '#1e293b'}; border:1px solid ${isUser ? '#0f2942' : 'var(--border)'}; padding:10px 14px; border-radius:10px; max-width:85%; font-size:0.88rem; line-height:1.5;">
+      ${imgHtml}
+      <div>${textHtml}</div>
+    </div>
+  `;
+
+  container.appendChild(bubble);
+  scrollChatToBottom();
+}
+
+function appendChatTyping(id) {
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+  const el = document.createElement('div');
+  el.id = id;
+  el.style.fontSize = '0.8rem';
+  el.style.color = 'var(--text-muted)';
+  el.style.marginBottom = '10px';
+  el.textContent = '🤖 מנתח ממצאים בשטח מול 1,773 תקנים...';
+  container.appendChild(el);
+  scrollChatToBottom();
+}
+
+function removeChatTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function scrollChatToBottom() {
+  const container = document.getElementById('chat-messages');
+  if (container) {
+    container.scrollTop = container.scrollHeight;
+  }
+}
+
+// ---------------------------------------------------------
+// API Settings Modal
+// ---------------------------------------------------------
+function openApiModal() {
+  const provider = localStorage.getItem('bedek_ai_provider') || 'gemini';
+  const key = localStorage.getItem('bedek_ai_api_key') || '';
+  document.getElementById('api-provider').value = provider;
+  document.getElementById('api-key-value').value = key;
+  document.getElementById('modal-api-settings').classList.add('active');
+}
+
+function closeApiModal() {
+  document.getElementById('modal-api-settings').classList.remove('active');
+}
+
+function saveApiSettings() {
+  const provider = document.getElementById('api-provider').value;
+  const key = document.getElementById('api-key-value').value.trim();
+  localStorage.setItem('bedek_ai_provider', provider);
+  localStorage.setItem('bedek_ai_api_key', key);
+  closeApiModal();
+  alert('הגדרות בינה מלאכותית נשמרו בהצלחה במכשיר זה!');
+}
+
+function handleApiProviderChange() {
+  // Can adapt placeholder if needed
+}
+
+// ---------------------------------------------------------
+// Lightbox Modal for Photos
+// ---------------------------------------------------------
+function openImageLightbox(src) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay active';
+  overlay.style.zIndex = '3000';
+  overlay.onclick = () => overlay.remove();
+  overlay.innerHTML = `
+    <div style="position:relative; max-width:90vw; max-height:90vh;">
+      <img src="${src}" style="max-width:100%; max-height:85vh; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+      <button style="position:absolute; top:-12px; right:-12px; background:#ef4444; color:#fff; border:none; border-radius:50%; width:32px; height:32px; cursor:pointer; font-weight:800; font-size:16px;">✕</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+// Helper: Escape HTML
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -587,382 +1463,5 @@ function escapeHtml(text) {
 }
 
 function setupEventListeners() {
-  const searchInput = document.getElementById('search-input');
-  if (searchInput) {
-    let debounceTimer;
-    searchInput.addEventListener('input', (e) => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        searchQuery = e.target.value;
-        renderFindings();
-      }, 150);
-    });
-  }
-
-  const clientInputs = ['input-client-name', 'input-client-phone', 'input-address', 'input-property-type', 'input-date', 'input-general-notes'];
-  clientInputs.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('input', () => {
-        inspection.clientName = document.getElementById('input-client-name').value;
-        inspection.clientPhone = document.getElementById('input-client-phone').value;
-        inspection.address = document.getElementById('input-address').value;
-        inspection.propertyType = document.getElementById('input-property-type').value;
-        inspection.date = document.getElementById('input-date').value;
-        inspection.generalNotes = document.getElementById('input-general-notes').value;
-        saveInspection();
-      });
-    }
-  });
+  // Any extra global listeners
 }
-
-// ==========================================
-// AI CHAT & VISION INTEGRATION
-// ==========================================
-let chatPendingImage = null;
-
-function populateChatRoomSelect() {
-  const sel = document.getElementById('chat-room-select');
-  if (!sel) return;
-  sel.innerHTML = '';
-  DEFAULT_ROOMS.forEach(r => {
-    const opt = document.createElement('option');
-    opt.value = r;
-    opt.textContent = r;
-    if (r === activeRoom) opt.selected = true;
-    sel.appendChild(opt);
-  });
-}
-
-function updateChatRoomDisplay() {
-  const sel = document.getElementById('chat-room-select');
-  if (sel) sel.value = activeRoom;
-}
-
-function startVisionScan() {
-  switchTab('chat');
-  setTimeout(() => {
-    const fileInput = document.getElementById('chat-file-input');
-    if (fileInput) fileInput.click();
-  }, 150);
-}
-
-function handleChatImageSelect(e) {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    const img = new Image();
-    img.onload = function() {
-      // Resize if large to ensure fast mobile upload
-      const canvas = document.createElement('canvas');
-      let w = img.width;
-      let h = img.height;
-      const maxDim = 1200;
-      if (w > maxDim || h > maxDim) {
-        if (w > h) { h = Math.round(h * (maxDim / w)); w = maxDim; }
-        else { w = Math.round(w * (maxDim / h)); h = maxDim; }
-      }
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-      chatPendingImage = canvas.toDataURL('image/jpeg', 0.85);
-
-      const previewContainer = document.getElementById('chat-image-preview');
-      const previewImg = document.getElementById('chat-preview-img');
-      if (previewContainer && previewImg) {
-        previewImg.src = chatPendingImage;
-        previewContainer.style.display = 'flex';
-      }
-    };
-    img.src = evt.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function clearChatImage() {
-  chatPendingImage = null;
-  const previewContainer = document.getElementById('chat-image-preview');
-  const fileInput = document.getElementById('chat-file-input');
-  if (previewContainer) previewContainer.style.display = 'none';
-  if (fileInput) fileInput.value = '';
-}
-
-// Client-Side AI & Building Standards Expert Engine
-const EXPERT_SYNONYMS = {
-  "איטום": ["רטיבות", "חדירת מים", "הרטבה", "רובה", "סיליקון", "מסטיק", "פוגות", "רולקה", "אטימה", "סף", "מפתן"],
-  "רטיבות": ["איטום", "סימני רטיבות", "עובש", "קילוף", "קפילרית", "נזילה", "כתמי מים", "לחות"],
-  "סדק": ["סדקים", "נימי", "טיח", "צבע", "הפרדות", "סדיקה", "שבר"],
-  "ריצוף": ["אריחים", "גרניט פורצלן", "קרמיקה", "פוגות", "מישקים", "שקיעה", "שבירה", "חלול", "מישק הפרדה", "תפר"],
-  "חיפוי": ["קרמיקה", "הדבקה", "אריחי קיר", "פוגות", "נשירה"],
-  "מעקה": ["מסעד", "גובה מגן", "מדרגות", "מרפסת", "סורג", "1142", "1918"],
-  "שיפוע": ["ניקוז", "עמידת מים", "שיפועים", "קולטן", "מרפסת", "גג", "מקלחת", "אסלה"],
-  'ממד': ['ממד', 'דלת הדף', 'חלון הדף', 'שסתום', 'צנרת', 'איוורור', 'הגא', '4422'],
-  "דלת": ["משקוף", "כנף", "מנעול", "סף", "הלבשות", "מרווח", "צילינדר", "ידית", "5044", "23"],
-  "חלון": ["אלומיניום", "כנף", "זכוכית", "מסילה", "איטום", "גומיות", "1068", "4068"],
-  'אינסטלציה': ['סיפון', 'ברז', 'אסלה', 'ניאגרה', 'כיור', 'ביקורת', 'מחסום רצפה', 'קולטן', '1205', 'הלת', 'שיפוע'],
-  'אסלה': ['מושב אסלה', 'שיפוע', 'פילוס', 'הדחה', 'מנגנון', '1205', 'הלת', 'נזילה'],
-  'חשמל': ['לוח חשמל', 'מפסק', 'שקע', 'הארקה', 'אינטרקום', 'נתיך', 'מאמת', 'גוף תאורה'],
-  "אקוסטיקה": ["בידוד אקוסטי", "רעש", "הולם", "קול", "1068"]
-};
-
-function matchClientDefects(query, room) {
-  const dbFindings = (window.REPORTO_DB && window.REPORTO_DB.findings) ? window.REPORTO_DB.findings : [];
-  const shimonItems = (window.SHIMON_INSPECTION && window.SHIMON_INSPECTION.items) ? window.SHIMON_INSPECTION.items : [];
-  
-  const qLower = (query || '').toLowerCase();
-  const tokens = qLower.split(/\s+/).filter(t => t.length > 1);
-  
-  const expandedTokens = new Set(tokens);
-  for (const [k, syns] of Object.entries(EXPERT_SYNONYMS)) {
-    if (qLower.includes(k) || tokens.some(t => t.includes(k))) {
-      syns.forEach(s => expandedTokens.add(s.toLowerCase()));
-    }
-  }
-
-  const scored = [];
-
-  for (const it of shimonItems) {
-    const text = ((it.title || '') + ' ' + (it.std || '') + ' ' + (it.rec || '')).toLowerCase();
-    let score = 0;
-    for (const tok of expandedTokens) {
-      if (text.includes(tok)) score += 10;
-      if ((it.title || '').toLowerCase().includes(tok)) score += 20;
-    }
-    if (score > 0) scored.push({ score, item: it, source: 'shimon' });
-  }
-
-  for (const f of dbFindings) {
-    const text = ((f.name || '') + ' ' + (f.std || '') + ' ' + (f.rec || '')).toLowerCase();
-    let score = 0;
-    for (const tok of expandedTokens) {
-      if (text.includes(tok)) score += 5;
-      if ((f.name || '').toLowerCase().includes(tok)) score += 12;
-    }
-    if (score > 0) scored.push({ score, finding: f, source: 'reporto' });
-  }
-
-  scored.sort((a, b) => b.score - a.score);
-  return scored;
-}
-
-function generateClientExpertReply(text, image, room) {
-  const matches = matchClientDefects(text || '', room || '');
-  const top = matches.length > 0 ? matches[0] : null;
-
-  let defect = null;
-  if (top) {
-    if (top.source === 'shimon' && top.item) {
-      const it = top.item;
-      defect = {
-        title: it.title,
-        std: it.std,
-        rec: it.rec,
-        price: it.price || 950,
-        unit: it.unit || 'קומפלט',
-        room: room || it.room || 'כללי',
-        findingId: it.id
-      };
-    } else if (top.finding) {
-      const f = top.finding;
-      defect = {
-        title: f.name,
-        std: f.std || 'תקנות התכנון והבנייה וכללי המקצוע המקובלים',
-        rec: f.rec || 'נדרש לתקן את הליקוי בהתאם להנחיות התקן והיצרן',
-        price: f.up || 450,
-        unit: f.ut || 'יח\'',
-        room: room || 'כללי',
-        findingId: f.id
-      };
-    }
-  }
-
-  if (!defect) {
-    defect = {
-      title: 'ליקוי ואי-התאמה: ' + (text || 'בדיקת ליקוי במבנה'),
-      std: 'תקנות התכנון והבנייה (בקשה להיתר, תנאיו ואגרות) וההמפרט הכללי לעבודות בנייה',
-      rec: 'יש לבצע פירוק, הכנה מחדש וביצוע מקצועי בהתאם להנחיות התקנים והוראות היצרן.',
-      price: 500,
-      unit: 'קומפלט',
-      room: room || 'כללי',
-      findingId: 'gen_' + Date.now()
-    };
-  }
-
-  const reply = '🔍 **ניתוח מהנדס מומחה (צ. ביקורת מבנים):**\n' +
-    'בבדיקה הנדסית של הממצא ב' + (room || 'נכס') + ', אותרה אי-התאמה לדרישות התקן הישראלי ולכללי המקצוע הראויים.\n\n' +
-    '📜 **ביסוס הנדסי ותקנים מחייבים:**\n' +
-    (defect.std || 'תקנות התכנון והבנייה (הגנת המבנה מרטיבות ובטיחות משתמשים).') + '\n\n' +
-    '🛠️ **הנחיית תיקון ואופן ביצוע:**\n' +
-    (defect.rec ? defect.rec : 'יש לתקן באופן מקצועי ולהשיב את המצב לקדמותו.') + '\n\n' +
-    '💡 *הממצא ערוך ומוכן כסעיף תקני לחוות דעת הנדסית, כולל אומדן כספי מוערך.*';
-
-  return { success: true, reply: reply, defect: defect };
-}
-
-async function sendChatMessage() {
-  const inputEl = document.getElementById('chat-input-text');
-  const text = (inputEl ? inputEl.value : '').trim();
-  const image = chatPendingImage;
-
-  if (!text && !image) return;
-
-  const messagesContainer = document.getElementById('chat-messages');
-  if (!messagesContainer) return;
-
-  const userBubble = document.createElement('div');
-  userBubble.className = 'chat-bubble user';
-  let userHtml = '<div class="chat-bubble-author">צוריאל (' + activeRoom + ')</div>';
-  if (text) userHtml += '<div>' + escapeHtml(text) + '</div>';
-  if (image) userHtml += '<img class="chat-msg-img" src="' + image + '">';
-  userBubble.innerHTML = userHtml;
-  messagesContainer.appendChild(userBubble);
-
-  if (inputEl) inputEl.value = '';
-  clearChatImage();
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-  const loadingBubble = document.createElement('div');
-  loadingBubble.className = 'chat-bubble bot';
-  loadingBubble.id = 'chat-loading-bubble';
-  loadingBubble.innerHTML = '<div class="chat-bubble-author">🤖 עוזר הנדסי AI</div><div>מנתח מול מאגר 1,773 התקנים ומפיק מענה הנדסי... ⏳</div>';
-  messagesContainer.appendChild(loadingBubble);
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-  await new Promise(r => setTimeout(r, 300));
-
-  let data = null;
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1200);
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify({ message: text, image: image, room: activeRoom })
-    });
-    clearTimeout(timeoutId);
-    if (res.ok) {
-      data = await res.json();
-    }
-  } catch (e) {
-    // Expected when offline or on static CDN
-  }
-
-  if (!data || !data.success) {
-    data = generateClientExpertReply(text, image, activeRoom);
-  }
-
-  loadingBubble.remove();
-
-  const botBubble = document.createElement('div');
-  botBubble.className = 'chat-bubble bot';
-
-  let formattedText = escapeHtml(data.reply || '')
-    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-    .replace(/\n/g, '<br>');
-
-  let botHtml = '<div class="chat-bubble-author">🤖 עוזר הנדסי מומחה (צ. ביקורת מבנים)</div>' +
-                '<div>' + formattedText + '</div>';
-
-  if (data.defect) {
-    const d = data.defect;
-    d.room = d.room || activeRoom;
-    if (image) d.photo = image;
-
-    const defectIdStr = 'def_' + Date.now();
-    window[defectIdStr] = d;
-
-    botHtml += 
-      '<div class="chat-defect-card">' +
-        '<div class="chat-defect-title">📋 ' + escapeHtml((d.title || '').split('\n')[0]) + '</div>' +
-        (d.std ? '<div class="chat-defect-meta">📜 <b>תקן:</b> ' + escapeHtml(d.std) + '</div>' : '') +
-        (d.rec ? '<div class="chat-defect-meta">🔧 <b>המלצה:</b> ' + escapeHtml(d.rec.slice(0, 160)) + '...</div>' : '') +
-        (d.price ? '<div class="chat-defect-meta">💰 <b>אומדן:</b> ' + d.price + ' ₪ ' + (d.unit ? 'ל' + d.unit : '') + '</div>' : '') +
-        '<button type="button" class="btn btn-primary btn-block" style="margin-top:8px; font-weight:700;" onclick="insertChatDefectToReport(\"' + defectIdStr + '\", this)">' +
-          '➕ הוסף ליקוי זה לדוח (' + escapeHtml(d.room) + ')' +
-        '</button>' +
-      '</div>';
-  }
-
-  botBubble.innerHTML = botHtml;
-  messagesContainer.appendChild(botBubble);
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-function insertChatDefectToReport(defectKey, btn) {
-  const d = window[defectKey];
-  if (!d) return;
-
-  const item = {
-    id: 'it_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-    findingId: d.findingId || ('chat_' + Date.now()),
-    room: d.room || activeRoom,
-    title: d.title || '',
-    std: d.std || '',
-    rec: d.rec || '',
-    price: Number(d.price) || 0,
-    qty: Number(d.qty) || 1,
-    unit: d.unit || "יח'",
-    note: d.note || '',
-    photos: d.photo ? [d.photo] : []
-  };
-
-  inspection.items.push(item);
-  saveInspection();
-  updateBadge();
-
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '✅ נוסף בהצלחה לדוח ב' + item.room;
-    btn.style.background = '#10b981';
-    btn.style.borderColor = '#10b981';
-  }
-}
-
-// Hook into switchTab
-const originalSwitchTab = window.switchTab;
-window.switchTab = function(tab) {
-  if (originalSwitchTab) originalSwitchTab(tab);
-  if (tab === 'chat') {
-    populateChatRoomSelect();
-    const messages = document.getElementById('chat-messages');
-    if (messages) messages.scrollTop = messages.scrollHeight;
-  }
-};
-
-// Also populate chat room select on init
-document.addEventListener('DOMContentLoaded', () => {
-  populateChatRoomSelect();
-});
-
-
-// Shimon Meir Report Loader
-window.loadShimonReport = function(confirmPrompt) {
-  if (confirmPrompt && !confirm('לטעון מחדש את כל 30 הליקויים של שמעון מאיר כהן קדוש?')) return;
-  if (window.SHIMON_INSPECTION) {
-    inspection = JSON.parse(JSON.stringify(window.SHIMON_INSPECTION));
-    saveInspection();
-    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
-    setVal('input-client-name', inspection.clientName);
-    setVal('input-client-phone', inspection.clientPhone);
-    setVal('input-address', inspection.address);
-    setVal('input-property-type', inspection.propertyType || 'דירת מגורים');
-    setVal('input-date', inspection.date);
-    setVal('input-general-notes', inspection.generalNotes);
-    updateBadge();
-    if (activeTab === 'inspection') renderInspectionItems();
-    console.log('Shimon Meir inspection loaded successfully!');
-  }
-};
-
-// Check if inspection is empty on load, auto-load Shimon
-const origInit = document.addEventListener;
-window.addEventListener('load', () => {
-  if (!inspection || !inspection.items || inspection.items.length === 0) {
-    window.loadShimonReport(false);
-  }
-});

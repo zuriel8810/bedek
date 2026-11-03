@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>צ. ביקורת מבנים - דוחות בדק בית</title>
+  <title>צ. ביקורת מבנים - דוחות בדק בית וחוות דעת מומחה</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f2942">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="בדק בית">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -19,391 +19,555 @@
     <div class="header-top">
       <div class="brand-title">
         <span>🏗️ צ. ביקורת מבנים</span>
-        <span class="brand-badge">PWA</span>
+        <span class="brand-badge">Reporto 1:1</span>
       </div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size: 0.8rem; font-weight: 500;">צוריאל צדוק</span>
-        <button type="button" onclick="openApiModal()" style="background:rgba(255,255,255,0.18); border:none; color:#fff; font-size:0.75rem; padding:3px 8px; border-radius:6px; cursor:pointer;" title="הגדרות API">⚙️ AI</button>
+      <div class="inspector-info-tag">
+        <span>צוריאל צדוק • 053-9514613</span>
+        <button type="button" class="btn btn-sm btn-outline" style="background:rgba(255,255,255,0.18); border:none; color:#fff;" onclick="openApiModal()" title="הגדרות בינה מלאכותית">⚙️ AI</button>
       </div>
-    </div>
-    <div class="sub-header">
-      מערכת הפקת דוחות בדק בית ואיתור נזילות בשטח
     </div>
   </header>
 
-  <!-- TAB 1: FINDINGS DATABASE -->
-  <main id="tab-search" class="tab-content active container">
-    <!-- Active Room Selector -->
-    <div class="card" style="padding: 10px 14px; margin-bottom: 10px;">
-      <div style="font-size:0.8rem; font-weight:700; color:var(--text-muted); margin-bottom:6px;">חלל עבודה נוכחי לבדיקה:</div>
-      <div class="room-bar" id="room-bar"></div>
-    </div>
-
-    <!-- Search Box -->
-    <div style="display:flex; gap:8px; margin-bottom:10px;">
-      <button type="button" class="btn btn-primary" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; font-weight:700;" onclick="startVisionScan()">
-        📷 סריקת ליקוי מתמונה וטקסט (AI)
+  <!-- Top Sticky Navigation Tabs (Reporto 1:1) -->
+  <nav class="top-nav">
+    <div class="top-nav-inner">
+      <button type="button" class="nav-tab-btn active" data-tab="reports" onclick="switchNavTab('reports')">
+        <span>📑</span>
+        <span>דוחות</span>
+        <span class="nav-tab-badge" id="top-badge-reports">1</span>
       </button>
-      <button type="button" class="btn btn-outline" style="padding:10px 14px; font-weight:700;" onclick="switchTab('chat')">
-        💬 צ'אט מומחה
+      <button type="button" class="nav-tab-btn" data-tab="editor" onclick="switchNavTab('editor')">
+        <span>✏️</span>
+        <span>עורך בדיקה</span>
+        <span class="nav-tab-badge" id="top-badge-editor">0</span>
       </button>
-    </div>
-    <div class="search-box">
-      <input type="text" id="search-input" class="search-input" placeholder="חיפוש מהיר במאגר (לפי ליקוי, תקן או קטגוריה)..." autocomplete="off">
-      <span class="search-icon">🔍</span>
-    </div>
-
-    <!-- Repository Filters -->
-    <div class="repo-filters" id="repo-filters"></div>
-
-    <!-- Count -->
-    <div id="results-count" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;"></div>
-
-    <!-- Findings List -->
-    <div id="findings-list"></div>
-  </main>
-
-  <!-- TAB 2: ACTIVE INSPECTION -->
-  <main id="tab-inspection" class="tab-content container">
-    <div id="inspection-items-list"></div>
-  </main>
-
-  <!-- TAB 3: CLIENT & PROPERTY SETTINGS -->
-  <main id="tab-settings" class="tab-content container">
-    <div class="card">
-      <h3 style="margin-bottom:14px; color:var(--primary);">פרטי הבדיקה והלקוח</h3>
-      
-      <div class="form-group">
-        <label class="form-label">שם המזמין / לקוח:</label>
-        <input type="text" id="input-client-name" class="form-input" placeholder="לדוגמה: ישראל ישראלי">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">טלפון לקוח:</label>
-        <input type="tel" id="input-client-phone" class="form-input" placeholder="050-0000000">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">כתובת הנכס:</label>
-        <input type="text" id="input-address" class="form-input" placeholder="רחוב, מספר בית, עיר, מספר דירה">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">סוג הנכס:</label>
-        <select id="input-property-type" class="form-select">
-          <option value="דירת מגורים (בית משותף)">דירת מגורים (בית משותף)</option>
-          <option value="דירת גן">דירת גן</option>
-          <option value="פנטהאוז / דופלקס">פנטהאוז / דופלקס</option>
-          <option value="בית צמוד קרקע / וילה">בית צמוד קרקע / וילה</option>
-          <option value="מבנה מסחרי / משרד">מבנה מסחרי / משרד</option>
-          <option value="רכוש משותף / לובי ומדרגות">רכוש משותף / לובי ומדרגות</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">תאריך הבדיקה:</label>
-        <input type="date" id="input-date" class="form-input">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">הערות כלליות ומצב הנכס:</label>
-        <textarea id="input-general-notes" class="form-textarea" placeholder="למשל: הדירה נמסרה לפני כחודש, טרם אוכלסה, בדיקה בוצעה בנוכחות בעל הנכס..."></textarea>
-      </div>
-    </div>
-
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <h3 style="margin:0; color:var(--primary); font-size:1.05rem;">מנוע AI וזיהוי תמונות (Client-Side)</h3>
-        <span id="settings-tab-api-badge" class="provider-badge unset">לא מוגדר</span>
-      </div>
-      <p style="font-size:0.83rem; color:var(--text-muted); margin-bottom:12px; line-height:1.5;">
-        ניתוח תמונות בשטח (Vision), בדיקת התאמה לתקנים ישראליים והפקת ליקויים אוטומטית פועלים ישירות מהדפדפן מול Google Gemini או OpenAI באמצעות מפתח ה-API האישי שלך ללא שרת ביניים.
-      </p>
-      <button type="button" class="btn btn-outline btn-block" onclick="openApiModal()">
-        ⚙️ הגדר מפתח API (Google Gemini / OpenAI)
+      <button type="button" class="nav-tab-btn" data-tab="stocks" onclick="switchNavTab('stocks')">
+        <span>📦</span>
+        <span>מאגרים</span>
+        <span class="nav-tab-badge">1,773</span>
+      </button>
+      <button type="button" class="nav-tab-btn" data-tab="report" onclick="switchNavTab('report')">
+        <span>📄</span>
+        <span>הפקת דוח</span>
+      </button>
+      <button type="button" class="nav-tab-btn" data-tab="chat" onclick="switchNavTab('chat')">
+        <span>🤖</span>
+        <span>עוזר AI</span>
       </button>
     </div>
+  </nav>
 
-    <div class="card">
-      <h3 style="margin-bottom:14px; color:var(--primary);">פרטי הבודק והעסק</h3>
-      <div style="font-size:0.9rem; line-height:1.8;">
-        <div><b>שם העסק:</b> צ. ביקורת מבנים</div>
-        <div><b>שם הבודק:</b> צוריאל צדוק</div>
-        <div><b>הסמכה:</b> בודק מוסמך ואיתור נזילות</div>
-        <div><b>טלפון:</b> 053-9514613</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3 style="margin-bottom:14px; color:var(--danger);">ניהול נתוני בדיקה</h3>
-      <button class="btn btn-danger btn-block" onclick="if(confirm('האם אתה בטוח שברצונך להתחיל בדיקה חדשה? כל הנתונים הנוכחיים יאופסו.')) { localStorage.removeItem('bedek_active_inspection'); location.reload(); }">
-        🗑️ התחל בדיקה חדשה (איפוס נתונים)
-      </button>
-    </div>
-  </main>
-
-  <!-- TAB 4: REPORT PREVIEW & EXPORT -->
-  <main id="tab-report" class="tab-content container">
-    <div class="card" style="text-align:center; padding: 20px; margin-bottom:16px;">
-      <h3 style="color:var(--primary); margin-bottom:8px;">דוח חוות דעת הנדסית</h3>
-      <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:16px;">הדוח ערוך לפי פקודת הראיות, מוכן להדפסה ישירה או שמירה כקובץ PDF מלא וממותג.</p>
-      <button class="btn btn-primary btn-block" style="font-size:1.1rem; padding:14px;" onclick="printReport()">
-        🖨️ הדפס / שמור כ-PDF
-      </button>
-    </div>
-
-    <div id="report-preview-container" class="card" style="padding: 24px; overflow-x:auto;"></div>
-  </main>
-
-    <!-- TAB 5: AI ENGINEERING EXPERT CHAT -->
-  <main id="tab-chat" class="tab-content container">
-    <div class="chat-wrapper card">
-      <!-- Chat Header -->
-      <div class="chat-header-bar">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:1.2rem;">🤖</span>
-          <div>
-            <div style="font-weight:700; font-size:0.95rem;">עוזר הנדסי אישי לבדק בית</div>
-            <div id="chat-header-status" style="font-size:0.75rem; opacity:0.85;">Google Gemini 1.5 Flash • 1,773 תקנים</div>
-          </div>
+  <!-- ==============================================
+       TAB 1: REPORTS DASHBOARD (דוחות)
+       ============================================== -->
+  <main id="tab-reports" class="tab-content active container">
+    <!-- Greeting & Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📑</div>
+        <div>
+          <div class="stat-val" id="stat-total-reports">1</div>
+          <div class="stat-lbl">סה"כ דוחות בדיקה</div>
         </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-size:0.75rem;">חלל:</span>
-          <select id="chat-room-select" class="form-select chat-room-select" onchange="activeRoom = this.value; renderRoomBar(); updateChatRoomDisplay();">
-            <!-- Filled dynamically -->
-          </select>
-          <button type="button" class="btn btn-sm" style="background:rgba(255,255,255,0.22); color:#fff; border:none; cursor:pointer;" onclick="openApiModal()" title="הגדרות API">
-            ⚙️ הגדרות
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fffbeb; color:#b45309;">⏳</div>
+        <div>
+          <div class="stat-val" id="stat-in-progress">1</div>
+          <div class="stat-lbl">דוחות בעבודה</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#ecfdf5; color:#047857;">✅</div>
+        <div>
+          <div class="stat-val" id="stat-completed">0</div>
+          <div class="stat-lbl">דוחות שהושלמו</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#eff6ff; color:#1d4ed8;">🔍</div>
+        <div>
+          <div class="stat-val" id="stat-total-findings">31</div>
+          <div class="stat-lbl">ליקויים שנמצאו</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reports Action Toolbar -->
+    <div class="card">
+      <div class="card-header-flex">
+        <div style="font-weight:800; font-size:1.1rem; color:var(--primary);">רשימת דוחות בדיקה</div>
+        <button type="button" class="btn btn-gold" onclick="openNewReportModal()">
+          <span>➕</span>
+          <span>דוח חדש</span>
+        </button>
+      </div>
+
+      <div class="search-bar-wrap">
+        <input type="text" id="reports-search-input" class="search-input" placeholder="חיפוש דוח לפי שם לקוח, עיר או כתובת..." oninput="renderReportsList()">
+        <span class="search-icon">🔍</span>
+      </div>
+
+      <!-- Filter Buttons -->
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <button type="button" class="btn btn-sm btn-outline reports-filter-btn active" data-filter="all" onclick="filterReports('all', this)">הכל</button>
+        <button type="button" class="btn btn-sm btn-outline reports-filter-btn" data-filter="draft" onclick="filterReports('draft', this)">בעבודה (טיוטה)</button>
+        <button type="button" class="btn btn-sm btn-outline reports-filter-btn" data-filter="completed" onclick="filterReports('completed', this)">הושלם</button>
+      </div>
+
+      <!-- Reports Table -->
+      <div class="reports-table-wrap">
+        <table class="reports-table">
+          <thead>
+            <tr>
+              <th>שם הלקוח / כתובת הנכס</th>
+              <th>סוג הבדיקה</th>
+              <th>סטטוס</th>
+              <th>ליקויים שנמצאו</th>
+              <th>אומדן עלויות</th>
+              <th>תאריך בדיקה</th>
+              <th style="text-align:left;">פעולות</th>
+            </tr>
+          </thead>
+          <tbody id="reports-table-body">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==============================================
+       TAB 2: INSPECTION EDITOR (עורך בדיקה)
+       ============================================== -->
+  <main id="tab-editor" class="tab-content container">
+    <!-- Active Inspection Header Banner -->
+    <div class="inspection-active-bar">
+      <div>
+        <div class="insp-title" id="editor-insp-client">שמעון מאיר כהן קדוש</div>
+        <div class="insp-sub" id="editor-insp-address">יהדות מרוקו 107, דירה 5, נתיבות</div>
+      </div>
+      <div class="insp-metrics">
+        <div class="insp-metric-box">
+          <div class="insp-metric-val" id="editor-metric-items">31</div>
+          <div class="insp-metric-lbl">ליקויים</div>
+        </div>
+        <div class="insp-metric-box">
+          <div class="insp-metric-val" id="editor-metric-cost">₪28,450</div>
+          <div class="insp-metric-lbl">אומדן כולל</div>
+        </div>
+        <button type="button" class="btn btn-gold btn-sm" onclick="switchNavTab('report')">
+          <span>📄</span>
+          <span>הפק דוח</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Rooms Navigation Bar (Reporto 1:1) -->
+    <div class="room-bar-container">
+      <div style="font-size:0.78rem; font-weight:700; color:var(--text-muted); margin-bottom:6px;">סרגל חללים וחדרים לבדיקה:</div>
+      <div class="room-bar" id="editor-room-bar">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Active Room Content Area -->
+    <div class="card" style="margin-bottom:12px; background:#f8fafc; border:1px solid var(--border);">
+      <div class="card-header-flex">
+        <div>
+          <span style="font-size:1.15rem; font-weight:800; color:var(--primary);" id="active-room-title">סלון</span>
+          <span style="font-size:0.85rem; color:var(--text-muted); margin-right:8px;" id="active-room-summary">(0 ליקויים)</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-primary" onclick="openAddFindingModal()">
+            <span>➕</span>
+            <span>הוסף ממצא לחדר</span>
+          </button>
+          <button type="button" class="btn btn-outline" onclick="startVisionScan()" title="סריקת תמונה במצלמה">
+            <span>📷</span>
+            <span>סריקת AI</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Findings in Active Room List -->
+    <div id="room-findings-list">
+      <!-- Defect Cards rendered by JS -->
+    </div>
+  </main>
+
+  <!-- ==============================================
+       TAB 3: REPOSITORIES / STOCKS (מאגרים)
+       ============================================== -->
+  <main id="tab-stocks" class="tab-content container">
+    <div class="card">
+      <div class="card-header-flex">
+        <div>
+          <div style="font-weight:800; font-size:1.2rem; color:var(--primary);">ספריית מאגרי ממצאים ותקנים</div>
+          <div style="font-size:0.85rem; color:var(--text-muted);">1,773 ממצאים ותקנים ישראליים רשמיים (Reporto)</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="openCustomFindingModal()">
+            <span>➕</span>
+            <span>הוסף ממצא מותאם אישית</span>
           </button>
         </div>
       </div>
 
-      <!-- Banner if API key missing -->
-      <div id="chat-no-key-banner" class="chat-api-banner" style="display:none; margin: 10px 10px 0 10px;">
-        <div style="font-weight:700; margin-bottom:4px; font-size:0.92rem;">⚡ נדרש מפתח API להפעלת ניתוח ה-AI וזיהוי תמונות</div>
-        <div style="font-size:0.82rem; margin-bottom:8px; line-height:1.4;">
-          האפליקציה פועלת ישירות מול ה-AI ללא שרת. להפעלת מומחה הבדק וזיהוי הליקויים בתמונות, הזן מפתח Google Gemini (חינמי ומומלץ) או OpenAI.
+      <!-- Repositories Pills -->
+      <div class="repo-tabs-bar" id="stocks-repo-tabs">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Search in Repositories -->
+      <div class="search-bar-wrap">
+        <input type="text" id="stocks-search-input" class="search-input" placeholder="חיפוש מהיר במאגר (שם ליקוי, תקן ישראלי, המלצה או קטגוריה)..." oninput="renderStocksBrowser()">
+        <span class="search-icon">🔍</span>
+      </div>
+
+      <!-- Summary count -->
+      <div id="stocks-count-summary" style="font-size:0.82rem; color:var(--text-muted); margin-bottom:12px;"></div>
+
+      <!-- Category Accordions List -->
+      <div id="stocks-categories-list">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </main>
+
+  <!-- ==============================================
+       TAB 4: REPORT PREVIEW & EXPORT (הפקת דוח)
+       ============================================== -->
+  <main id="tab-report" class="tab-content container">
+    <!-- Report Action Controls -->
+    <div class="card report-controls-bar" style="background:#ffffff; padding:16px; margin-bottom:16px;">
+      <div class="card-header-flex" style="margin-bottom:8px;">
+        <div>
+          <h3 style="color:var(--primary); font-size:1.15rem; font-weight:800; margin-bottom:4px;">הפקת דוח חוות דעת מומחה לבית משפט</h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">
+            הדוח מעוצב בדיוק לפי דרישות פקודת הראיות, מותאם לדפוס A4 ומותג מלא של "צ. ביקורת מבנים".
+          </p>
         </div>
-        <button type="button" class="btn btn-warning btn-sm" style="font-weight:700;" onclick="openApiModal()">
-          🔑 לחץ כאן להזנת מפתח API
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary" style="padding:10px 20px; font-weight:800; font-size:1rem;" onclick="printReport()">
+            <span>🖨️</span>
+            <span>הדפס / שמור כ-PDF</span>
+          </button>
+          <button type="button" class="btn btn-outline" onclick="exportInspectionJSON()">
+            <span>📥</span>
+            <span>ייצוא קובץ JSON</span>
+          </button>
+          <button type="button" class="btn btn-outline" onclick="switchNavTab('editor')">
+            <span>✏️</span>
+            <span>חזרה לעורך</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Document Paper (Reporto 1:1) -->
+    <div id="report-paper" class="report-paper-container">
+      <!-- Built dynamically by generateReportDocument() -->
+    </div>
+  </main>
+
+  <!-- ==============================================
+       TAB 5: AI EXPERT CHAT & VISION (עוזר AI)
+       ============================================== -->
+  <main id="tab-chat" class="tab-content container">
+    <div class="card" style="padding:0; overflow:hidden;">
+      <!-- Header -->
+      <div style="background:var(--primary); color:#fff; padding:14px 18px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:1.4rem;">🤖</span>
+          <div>
+            <div style="font-weight:800; font-size:1rem;">עוזר מומחה בדק בית וראייה מלאכותית</div>
+            <div style="font-size:0.76rem; color:#cbd5e1;">זיהוי ליקויים מתמונות שטח והתאמת תקן ישראלי רשמי בזמן אמת</div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline" style="background:rgba(255,255,255,0.18); border:none; color:#fff;" onclick="openApiModal()">
+          ⚙️ מפתח API
         </button>
       </div>
 
       <!-- Messages Feed -->
-      <div id="chat-messages" class="chat-messages-container">
-        <div class="chat-bubble bot">
-          <div class="chat-bubble-author">🤖 עוזר הנדסי (צ. ביקורת מבנים)</div>
-          <div class="chat-bubble-body">
-            שלום צוריאל! אני כאן לעזור לך בשטח בזמן אמת:
-            <ul style="margin:6px 0 0 16px; padding:0; font-size:0.85rem; line-height:1.6;">
-              <li>📸 <b>צילום ליקוי:</b> לחץ על 📷 וצרף תמונה לזיהוי אוטומטי של התקן וההנחיה.</li>
-              <li>🔍 <b>שאלות מקצועיות:</b> שאל על שיטות תיקון, תקנים ישראליים או פסיקות.</li>
-              <li>⚡ <b>שליטה ישירה:</b> כל ליקוי שמוצע ניתן להוספה ישירה לדוח בלחיצת כפתור אחת.</li>
-            </ul>
-          </div>
+      <div id="chat-messages" style="height:380px; overflow-y:auto; padding:16px; background:#f8fafc;">
+        <div style="background:#ffffff; border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:12px; line-height:1.6; font-size:0.9rem;">
+          <b>שלום צוריאל!</b> אני כאן איתך בשטח:
+          <ul style="margin:8px 0 0 20px; font-size:0.86rem; color:#334155;">
+            <li>📸 <b>צילום ליקוי:</b> לחץ על 📷 וצלם רטיבות, סדק, מרווח דלת או שיפוע לזיהוי מידי.</li>
+            <li>🔍 <b>התאמת תקן:</b> מנוע ה-AI יסרוק 1,773 תקנים ישראליים ויציג את נוסח החוק המדויק.</li>
+            <li>➕ <b>הוספה לדוח:</b> בלחיצה אחת תוכל להוסיף את הממצא לחדר הנבדק כעת.</li>
+          </ul>
         </div>
       </div>
 
-      <!-- Attached Image Preview Strip -->
-      <div id="chat-image-preview" class="chat-preview-strip" style="display:none;">
-        <img id="chat-preview-img" src="" alt="תמונה שנבחרה">
-        <div style="flex:1; font-size:0.8rem; color:#475569;">תמונה מוכנה לניתוח ראייה (Vision)</div>
-        <button type="button" class="btn btn-danger" style="padding:4px 8px; font-size:0.75rem;" onclick="clearChatImage()">✕ בטל</button>
+      <!-- Image Attached Strip -->
+      <div id="chat-image-preview-strip" style="display:none; padding:8px 16px; background:#f1f5f9; border-top:1px solid var(--border); align-items:center; gap:12px;">
+        <img id="chat-preview-img" src="" alt="תמונה שנבחרה" style="width:60px; height:60px; object-fit:cover; border-radius:6px; border:1px solid var(--border);">
+        <div style="flex:1; font-size:0.82rem; color:#475569;">תמונה מוכנה לניתוח ראייה (Vision)</div>
+        <button type="button" class="btn btn-danger btn-sm" onclick="clearChatImage()">✕ בטל</button>
       </div>
 
       <!-- Input Bar -->
-      <div class="chat-input-bar">
+      <div style="padding:12px; background:#ffffff; border-top:1px solid var(--border); display:flex; gap:8px; align-items:center;">
         <input type="file" id="chat-file-input" accept="image/*" capture="environment" style="display:none;" onchange="handleChatImageSelect(event)">
-        <button type="button" class="chat-btn-action" onclick="document.getElementById('chat-file-input').click()" title="צלם או בחר תמונה">
+        <button type="button" class="btn btn-outline" style="font-size:1.2rem; padding:8px 12px;" onclick="document.getElementById('chat-file-input').click()" title="צלם תמונה מהשטח">
           📷
         </button>
-        <textarea id="chat-input-text" class="chat-input-field" rows="1" placeholder="תאר ליקוי, שאל שאלה הנדסית או צלם..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}"></textarea>
-        <button type="button" id="chat-send-btn" class="btn btn-primary" style="padding:8px 14px; font-weight:700; border-radius:10px;" onclick="sendChatMessage()">
+        <input type="text" id="chat-input-text" class="form-input" style="flex:1;" placeholder="תאר ליקוי, שאל על תקן או צלם..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+        <button type="button" class="btn btn-primary" onclick="sendChatMessage()">
           שלח
         </button>
       </div>
     </div>
   </main>
 
-  <!-- API SETTINGS MODAL -->
-  <div id="api-modal-overlay" class="modal-overlay" onclick="if(event.target === this) closeApiModal()">
+  <!-- ==============================================
+       MODAL 1: NEW REPORT FORM (הקמת דוח חדש)
+       ============================================== -->
+  <div id="modal-new-report" class="modal-overlay" onclick="if(event.target === this) closeNewReportModal()">
     <div class="modal-sheet">
       <div class="modal-header">
-        <h3 style="display:flex; align-items:center; gap:8px; font-size:1.05rem;">
-          <span>⚙️ הגדרות מנוע AI (Client-Side)</span>
-        </h3>
-        <button type="button" class="close-btn" onclick="closeApiModal()">✕</button>
-      </div>
-
-      <div style="background:#f1f5f9; padding:10px 12px; border-radius:8px; font-size:0.82rem; color:#334155; margin-bottom:14px; line-height:1.5;">
-        🔒 <b>פעולה ישירה (Client-side):</b> כל התמונות והשאלות נשלחות ישירות מהמכשיר שלך לשירות ה-AI. מפתח ה-API נשמר אך ורק במכשיר זה (localStorage).
+        <h3>➕ יצירת דוח בדיקה חדש</h3>
+        <button type="button" class="close-btn" onclick="closeNewReportModal()">✕</button>
       </div>
 
       <div class="form-group">
-        <label class="form-label"><b>ספק בינה מלאכותית:</b></label>
-        <select id="api-provider-select" class="form-select" onchange="handleProviderChange()">
-          <option value="gemini" selected>Google Gemini (ברירת מחדל מומלצת 🌟)</option>
-          <option value="openai">OpenAI (ChatGPT / GPT-4o)</option>
-        </select>
+        <label class="form-label">שם המזמין / לקוח:</label>
+        <input type="text" id="new-client-name" class="form-input" placeholder="לדוגמה: ישראל ישראלי">
       </div>
 
       <div class="form-group">
-        <label class="form-label"><b>דגם (Model):</b></label>
-        <select id="api-model-select" class="form-select">
-          <!-- Populated dynamically -->
-        </select>
+        <label class="form-label">טלפון לקוח:</label>
+        <input type="tel" id="new-client-phone" class="form-input" placeholder="050-0000000">
       </div>
 
       <div class="form-group">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <label class="form-label" style="margin:0;"><b>מפתח API (API Key):</b></label>
-          <span id="api-key-detected-badge" style="font-size:0.75rem; color:#059669; font-weight:700; display:none;"></span>
-        </div>
-        <div style="position:relative; display:flex; align-items:center;">
-          <input type="password" id="api-key-input" class="form-input" style="padding-left:42px; font-family:monospace; direction:ltr; text-align:left;" placeholder="הדבק כאן את המפתח (למשל AIzaSy...)" oninput="handleApiKeyInputChange(this.value)">
-          <button type="button" onclick="toggleApiKeyVisibility()" style="position:absolute; left:8px; background:none; border:none; cursor:pointer; font-size:1.15rem; padding:4px;" title="הצג / הסתר מפתח">👁️</button>
-        </div>
-        <div id="api-key-helper-text" style="font-size:0.78rem; color:#64748b; margin-top:6px; line-height:1.45;"></div>
-      </div>
-
-      <div id="api-test-status" style="display:none; padding:8px 12px; border-radius:8px; font-size:0.83rem; margin-bottom:12px;"></div>
-
-      <div style="display:flex; gap:10px; margin-top:16px;">
-        <button type="button" class="btn btn-outline" style="flex:1;" onclick="testApiConnection()">
-          🔌 בדיקת חיבור
-        </button>
-        <button type="button" class="btn btn-primary" style="flex:1.5; font-weight:700;" onclick="saveApiSettings()">
-          💾 שמור הגדרות
-        </button>
-      </div>
-
-      <div style="margin-top:12px; text-align:center;">
-        <button type="button" style="background:none; border:none; color:var(--danger); font-size:0.8rem; cursor:pointer; text-decoration:underline;" onclick="clearApiKey()">
-          🗑️ מחק מפתח שמור
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- EDIT / ADD MODAL -->
-  <div id="modal-overlay" class="modal-overlay" onclick="if(event.target === this) closeModal()">
-    <div class="modal-sheet">
-      <div class="modal-header">
-        <h3 id="modal-title">עריכת ליקוי</h3>
-        <button type="button" class="close-btn" onclick="closeModal()">✕</button>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">חלל הבדיקה:</label>
-        <select id="modal-room" class="form-select">
-          <option value="כניסה / לובי">כניסה / לובי</option>
-          <option value="סלון">סלון</option>
-          <option value="מטבח">מטבח</option>
-          <option value="פינת אוכל">פינת אוכל</option>
-          <option value="מרפסת שמש">מרפסת שמש</option>
-          <option value="חדר שינה הורים">חדר שינה הורים</option>
-          <option value="חדר רחצה הורים">חדר רחצה הורים</option>
-          <option value="חדר שינה 1">חדר שינה 1</option>
-          <option value="חדר שינה 2">חדר שינה 2</option>
-          <option value="חדר רחצה כללי">חדר רחצה כללי</option>
-          <option value="חדר שירות / כביסה">חדר שירות / כביסה</option>
-          <option value="ממ&quot;ד">ממ"ד</option>
-          <option value="מסדרון">מסדרון</option>
-          <option value="חצר / גינה">חצר / גינה</option>
-          <option value="גג">גג</option>
-          <option value="מרתף">מרתף</option>
-          <option value="חניה">חניה</option>
-          <option value="שטחים משותפים">שטחים משותפים</option>
-          <option value="כללי">כללי</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">תיאור הליקוי:</label>
-        <textarea id="modal-item-title" class="form-textarea" rows="3"></textarea>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">דרישת התקן / החוק:</label>
-        <textarea id="modal-std" class="form-textarea" rows="3"></textarea>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">הנחיה לתיקון:</label>
-        <textarea id="modal-rec" class="form-textarea" rows="2"></textarea>
+        <label class="form-label">כתובת הנכס המלאה:</label>
+        <input type="text" id="new-address" class="form-input" placeholder="רחוב, מספר בית, עיר, מספר דירה, קומה">
       </div>
 
       <div style="display:flex; gap:10px;">
         <div class="form-group" style="flex:1;">
-          <label class="form-label">מחיר יח' (₪):</label>
-          <input type="number" id="modal-price" class="form-input" min="0" step="50">
+          <label class="form-label">סוג הנכס:</label>
+          <select id="new-property-type" class="form-select">
+            <option value="דירת מגורים (חדשה מקבלן)">דירת מגורים (חדשה מקבלן)</option>
+            <option value="דירת מגורים יד שניה">דירת מגורים יד שניה</option>
+            <option value="דירת גן">דירת גן</option>
+            <option value="פנטהאוז / דופלקס">פנטהאוז / דופלקס</option>
+            <option value="בית צמוד קרקע / וילה">בית צמוד קרקע / וילה</option>
+            <option value="רכוש משותף / לובי ומדרגות">רכוש משותף / לובי ומדרגות</option>
+            <option value="מבנה מסחרי / משרד">מבנה מסחרי / משרד</option>
+          </select>
         </div>
         <div class="form-group" style="flex:1;">
-          <label class="form-label">כמות:</label>
-          <input type="number" id="modal-qty" class="form-input" min="1" step="1">
-        </div>
-        <div class="form-group" style="flex:1;">
-          <label class="form-label">יחידה:</label>
-          <input type="text" id="modal-unit" class="form-input" placeholder="יח' / מ&quot;ר">
+          <label class="form-label">תאריך הבדיקה:</label>
+          <input type="date" id="new-date" class="form-input">
         </div>
       </div>
 
       <div class="form-group">
-        <label class="form-label">הערות בודק נוספות:</label>
-        <input type="text" id="modal-note" class="form-input" placeholder="למשל: בצד ימין ליד החלון">
+        <label class="form-label">מאגר בדיקה ראשי:</label>
+        <select id="new-main-repo" class="form-select">
+          <option value="מאגר ממצאים בדק בית דירתי">מאגר ממצאים בדק בית דירתי (888 ממצאים)</option>
+          <option value="מאגר ממצאים - איתור נזילות ואינסטלציה - עדכון 10/26">איתור נזילות ואינסטלציה (681 ממצאים)</option>
+          <option value="מאגר ממצאים - בדק שטחים משותפים - עדכון 10/26">בדק שטחים משותפים</option>
+        </select>
       </div>
 
       <div class="form-group">
-        <label class="form-label">תמונות מהשטח:</label>
-        <input type="file" id="photo-file-input" accept="image/*" capture="environment" multiple style="display:none;" onchange="handlePhotoUpload(event)">
-        <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('photo-file-input').click()">
-          📷 צלם תמונה / בחר קובץ מהטלפון
-        </button>
-        <div id="modal-photos-grid" class="photos-grid"></div>
+        <label class="form-label">הערות כלליות ונסיבות הבדיקה:</label>
+        <textarea id="new-general-notes" class="form-textarea" rows="2" placeholder="למשל: הבדיקה נערכה בנוכחות בעל הנכס, טרם קבלת מפתח..."></textarea>
       </div>
 
       <div style="display:flex; gap:10px; margin-top:20px;">
-        <button type="button" class="btn btn-primary" style="flex:2;" onclick="saveModalItem()">💾 שמור ליקוי</button>
-        <button type="button" class="btn btn-danger" style="flex:1;" onclick="deleteModalItem()">🗑️ הסר</button>
+        <button type="button" class="btn btn-gold" style="flex:2;" onclick="createNewReportSubmit()">
+          <span>🚀</span>
+          <span>צור דוח והתחל בדיקה</span>
+        </button>
+        <button type="button" class="btn btn-outline" style="flex:1;" onclick="closeNewReportModal()">ביטול</button>
       </div>
     </div>
   </div>
 
-  <!-- PRINT REPORT TARGET (A4) -->
-  <div id="print-view"></div>
+  <!-- ==============================================
+       MODAL 2: ADD / SELECT FINDING MODAL
+       ============================================== -->
+  <div id="modal-select-finding" class="modal-overlay" onclick="if(event.target === this) closeSelectFindingModal()">
+    <div class="modal-sheet" style="max-width:800px;">
+      <div class="modal-header">
+        <h3 id="select-finding-room-title">➕ הוספת ממצא לחדר</h3>
+        <button type="button" class="close-btn" onclick="closeSelectFindingModal()">✕</button>
+      </div>
 
-  <!-- BOTTOM NAVIGATION BAR -->
+      <div class="search-bar-wrap">
+        <input type="text" id="modal-finding-search" class="search-input" placeholder="חיפוש ליקוי לפי מילות מפתח, מספר תקן או קטגוריה..." oninput="filterModalFindings()">
+        <span class="search-icon">🔍</span>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+        <select id="modal-filter-repo" class="form-select" style="flex:1; min-width:180px;" onchange="filterModalFindings()">
+          <option value="all">כל המאגרים (1,773 ממצאים)</option>
+        </select>
+        <select id="modal-filter-cat" class="form-select" style="flex:1; min-width:180px;" onchange="filterModalFindings()">
+          <option value="all">כל 58 הקטגוריות</option>
+        </select>
+        <button type="button" class="btn btn-outline btn-sm" onclick="openCustomFindingModal()">
+          <span>✏️</span>
+          <span>ליקוי ידני מותאם אישית</span>
+        </button>
+      </div>
+
+      <div id="modal-findings-results" style="max-height:360px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:8px; background:#f8fafc;">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================================
+       MODAL 3: EDIT / CUSTOM FINDING FORM
+       ============================================== -->
+  <div id="modal-edit-finding" class="modal-overlay" onclick="if(event.target === this) closeEditModal()">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 id="edit-modal-title">עריכת ממצא</h3>
+        <button type="button" class="close-btn" onclick="closeEditModal()">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">שם / תיאור הליקוי:</label>
+        <textarea id="form-item-title" class="form-textarea" rows="2" placeholder="תיאור הליקוי באופן ברור ומדויק"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">דרישת התקן הישראלי הרשמי (ת"י) / החוק:</label>
+        <textarea id="form-item-std" class="form-textarea" rows="2" placeholder="סעיף תקן, ציטוט הוראות הל&quot;ת או המפרט הכללי"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">הנחיה לתיקון / אופן ביצוע התיקון:</label>
+        <textarea id="form-item-rec" class="form-textarea" rows="2" placeholder="הנחיה מקצועית להפרכת טענות קבלן וביצוע תיקון"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">הערת בודק חופשית מהשטח:</label>
+        <input type="text" id="form-item-note" class="form-input" placeholder="למשל: נמדד מרווח של 8 מ&quot;מ, מתחת לחלון ימין">
+      </div>
+
+      <!-- Pricing fields -->
+      <div style="display:flex; gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">מחיר יח' (₪):</label>
+          <input type="number" id="form-item-price" class="form-input" min="0" step="50" oninput="calculateModalTotal()">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">כמות:</label>
+          <input type="number" id="form-item-qty" class="form-input" min="1" step="1" value="1" oninput="calculateModalTotal()">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">יחידה:</label>
+          <input type="text" id="form-item-unit" class="form-input" placeholder="יח' / מ&quot;ר">
+        </div>
+        <div class="form-group" style="flex:1.2;">
+          <label class="form-label">סה"כ לתשלום:</label>
+          <input type="text" id="form-item-total" class="form-input" readonly style="font-weight:800; background:#f8fafc; color:var(--primary);">
+        </div>
+      </div>
+
+      <!-- Photos Upload -->
+      <div class="form-group">
+        <label class="form-label">צילום ותמונות מהשטח:</label>
+        <input type="file" id="form-photo-input" accept="image/*" capture="environment" multiple style="display:none;" onchange="handleFindingPhotoUpload(event)">
+        <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('form-photo-input').click()">
+          <span>📷</span>
+          <span>צלם תמונה מהשטח / העלה קובץ</span>
+        </button>
+        <div id="form-photos-grid" class="defect-photos-strip"></div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" class="btn btn-primary" style="flex:2;" onclick="saveFindingModalSubmit()">
+          <span>💾</span>
+          <span>שמור ממצא בדוח</span>
+        </button>
+        <button type="button" class="btn btn-danger" id="btn-delete-finding" style="flex:1;" onclick="deleteActiveFinding()">
+          <span>🗑️</span>
+          <span>מחק</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================================
+       MODAL 4: API SETTINGS (GEMINI / OPENAI)
+       ============================================== -->
+  <div id="modal-api-settings" class="modal-overlay" onclick="if(event.target === this) closeApiModal()">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3>⚙️ הגדרות בינה מלאכותית (Client-Side)</h3>
+        <button type="button" class="close-btn" onclick="closeApiModal()">✕</button>
+      </div>
+
+      <p style="font-size:0.83rem; color:var(--text-muted); margin-bottom:14px; line-height:1.5;">
+        🔒 פעולה ישירה מהדפדפן שלך: מפתח ה-API נשמר אך ורק במכשיר זה ללא שרת ביניים ומאפשר זיהוי תמונות (Vision) בשטח.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">ספק AI:</label>
+        <select id="api-provider" class="form-select" onchange="handleApiProviderChange()">
+          <option value="gemini" selected>Google Gemini (מומלץ ומהיר 🌟)</option>
+          <option value="openai">OpenAI (GPT-4o)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">מפתח API (API Key):</label>
+        <input type="password" id="api-key-value" class="form-input" style="font-family:monospace; direction:ltr;" placeholder="הדבק כאן מפתח API">
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveApiSettings()">שמור הגדרות</button>
+        <button type="button" class="btn btn-outline" style="flex:1;" onclick="closeApiModal()">סגור</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================================
+       BOTTOM NAVIGATION (MOBILE)
+       ============================================== -->
   <nav class="bottom-nav">
-    <button class="nav-btn active" data-tab="search" onclick="switchTab('search')">
-      <span class="icon">🔍</span>
-      <span>מאגר ממצאים</span>
+    <button type="button" class="bottom-nav-btn active" data-tab="reports" onclick="switchNavTab('reports')">
+      <span class="bottom-nav-icon">📑</span>
+      <span>דוחות</span>
     </button>
-    <button class="nav-btn" data-tab="chat" onclick="switchTab('chat')">
-      <span class="icon">💬</span>
-      <span>עוזר AI</span>
+    <button type="button" class="bottom-nav-btn" data-tab="editor" onclick="switchNavTab('editor')">
+      <span class="bottom-nav-icon">✏️</span>
+      <span>עורך</span>
     </button>
-    <button class="nav-btn" data-tab="inspection" onclick="switchTab('inspection')">
-      <span class="icon">📋</span>
-      <span>בדיקה <span id="badge-count" class="badge-count" style="display:none;">0</span></span>
+    <button type="button" class="bottom-nav-btn" data-tab="stocks" onclick="switchNavTab('stocks')">
+      <span class="bottom-nav-icon">📦</span>
+      <span>מאגרים</span>
     </button>
-    <button class="nav-btn" data-tab="settings" onclick="switchTab('settings')">
-      <span class="icon">⚙️</span>
-      <span>פרטי לקוח</span>
+    <button type="button" class="bottom-nav-btn" data-tab="report" onclick="switchNavTab('report')">
+      <span class="bottom-nav-icon">📄</span>
+      <span>דוח</span>
     </button>
-    <button class="nav-btn" data-tab="report" onclick="switchTab('report')">
-      <span class="icon">📄</span>
-      <span>הפקת דוח</span>
+    <button type="button" class="bottom-nav-btn" data-tab="chat" onclick="switchNavTab('chat')">
+      <span class="bottom-nav-icon">🤖</span>
+      <span>AI</span>
     </button>
   </nav>
 
   <!-- SCRIPTS -->
   <script src="shimon_inspection.js"></script>
   <script src="findings_data.js"></script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW reg fail:', err));
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW fail:', err));
       });
     }
   </script>
