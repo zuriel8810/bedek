@@ -197,39 +197,19 @@
           <span style="font-size:1.15rem; font-weight:800; color:var(--primary);" id="active-room-title">סלון</span>
           <span style="font-size:0.85rem; color:var(--text-muted); margin-right:8px;" id="active-room-summary">(0 ליקויים)</span>
         </div>
-        <div style="display:flex; gap:8px;">
-          <button type="button" class="btn btn-primary" onclick="openAddFindingModal()">
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <button type="button" class="btn btn-primary btn-sm" onclick="openNewRepoModal()">
             <span>➕</span>
-            <span>הוסף ממצא לחדר</span>
+            <span>הוסף מאגר חדש</span>
           </button>
-          <button type="button" class="btn btn-outline" onclick="startVisionScan()" title="סריקת תמונה במצלמה">
-            <span>📷</span>
-            <span>סריקת AI</span>
+          <button type="button" class="btn btn-gold btn-sm" onclick="document.getElementById('import-repo-input').click()">
+            <span>📥</span>
+            <span>ייבוא מאגר</span>
           </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Findings in Active Room List -->
-    <div id="room-findings-list">
-      <!-- Defect Cards rendered by JS -->
-    </div>
-  </main>
-
-  <!-- ==============================================
-       TAB 3: REPOSITORIES / STOCKS (מאגרים)
-       ============================================== -->
-  <main id="tab-stocks" class="tab-content container">
-    <div class="card">
-      <div class="card-header-flex">
-        <div>
-          <div style="font-weight:800; font-size:1.2rem; color:var(--primary);">ספריית מאגרי ממצאים ותקנים</div>
-          <div style="font-size:0.85rem; color:var(--text-muted);">1,773 ממצאים ותקנים ישראליים רשמיים (Reporto)</div>
-        </div>
-        <div style="display:flex; gap:8px;">
+          <input type="file" id="import-repo-input" accept=".json,.csv" style="display:none;" onchange="importRepoFromFile(event)">
           <button type="button" class="btn btn-outline btn-sm" onclick="openCustomFindingModal()">
-            <span>➕</span>
-            <span>הוסף ממצא מותאם אישית</span>
+            <span>✍️</span>
+            <span>ממצא מותאם אישית</span>
           </button>
         </div>
       </div>
@@ -390,8 +370,10 @@
       <div class="form-group">
         <label class="form-label">מאגר בדיקה ראשי:</label>
         <select id="new-main-repo" class="form-select">
+          <option value="all" selected>🌟 כל המאגרים (1,773 ממצאים - משולב מלא)</option>
           <option value="מאגר ממצאים בדק בית דירתי">מאגר ממצאים בדק בית דירתי (888 ממצאים)</option>
           <option value="מאגר ממצאים - איתור נזילות ואינסטלציה - עדכון 10/26">איתור נזילות ואינסטלציה (681 ממצאים)</option>
+          <option value="מאגר ממצאים איתור נזילות">מאגר איתור נזילות (204 ממצאים)</option>
           <option value="מאגר ממצאים - בדק שטחים משותפים - עדכון 10/26">בדק שטחים משותפים</option>
         </select>
       </div>
@@ -582,7 +564,7 @@
   <!-- SCRIPTS -->
   <script src="shimon_inspection.js"></script>
   <script src="findings_data.js"></script>
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=20"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -713,6 +695,35 @@
       <button type="button" class="action-sheet-btn action-sheet-btn-cancel" onclick="closeRoomActionSheet()">
         <span>ביטול</span>
       </button>
+    </div>
+  </div>
+
+
+  <!-- Modal: Add New Repository (Reporto 1:1) -->
+  <div id="modal-new-repo" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeNewRepoModal()">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3>➕ הוספת מאגר ממצאים חדש</h3>
+        <button type="button" class="close-btn" onclick="closeNewRepoModal()">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">שם המאגר החדש:</label>
+        <input type="text" id="new-repo-name" class="form-input" placeholder="למשל: מאגר מערכות מיוחדות, מאגר בטיחות...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">קטגוריות ראשיות (מופרדות בפסיק):</label>
+        <input type="text" id="new-repo-categories" class="form-input" placeholder="לוחות חשמל, חיווט, הארקה, איטום...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">תיאור המאגר / הערות:</label>
+        <textarea id="new-repo-desc" class="form-textarea" rows="2" placeholder="מאגר ייעודי ל..."></textarea>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button type="button" class="btn btn-gold btn-block" onclick="saveNewRepoSubmit()">
+          <span>💾 שמור מאגר במערכת</span>
+        </button>
+        <button type="button" class="btn btn-outline" onclick="closeNewRepoModal()">ביטול</button>
+      </div>
     </div>
   </div>
 

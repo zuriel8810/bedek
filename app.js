@@ -8,7 +8,7 @@ let reportsList = [];
 let activeInspection = null;
 let activeNavTab = 'reports';
 let activeRoom = 'סלון';
-let activeStocksRepoIndex = 3; // Default to "מאגר ממצאים בדק בית דירתי"
+let activeStocksRepoIndex = 'all'; // Default to "מאגר ממצאים בדק בית דירתי"
 let editingItemIndex = -1; // -1 for new item
 let currentModalPhotos = [];
 let chatSelectedImageBase64 = null;
@@ -907,14 +907,32 @@ function renderStocksRepoTabs() {
   const container = document.getElementById('stocks-repo-tabs');
   if (!container || !db.repos) return;
 
-  container.innerHTML = db.repos.map((rp, idx) => {
-    const isActive = idx === activeStocksRepoIndex;
+  const isAllActive = activeStocksRepoIndex === 'all';
+  const totalFindings = db.findings ? db.findings.length : 1773;
+
+  let html = `
+    <button type="button" class="repo-tab-pill ${isAllActive ? 'active' : ''}" onclick="selectStocksRepo('all')">
+      🌟 כל המאגרים (${totalFindings.toLocaleString('he-IL')})
+    </button>
+  `;
+
+  html += db.repos.map((rp, idx) => {
+    const isActive = activeStocksRepoIndex === idx;
+    const count = indexedFindings.filter(f => Number(f.r) === idx).length;
     return `
       <button type="button" class="repo-tab-pill ${isActive ? 'active' : ''}" onclick="selectStocksRepo(${idx})">
-        ${escapeHtml(rp)}
+        ${escapeHtml(rp)} (${count})
       </button>
     `;
   }).join('');
+
+  html += `
+    <button type="button" class="btn-add-room" style="padding:6px 14px; font-size:0.82rem;" onclick="openNewRepoModal()">
+      <span>➕ מאגר חדש</span>
+    </button>
+  `;
+
+  container.innerHTML = html;
 }
 
 function selectStocksRepo(idx) {
@@ -930,8 +948,10 @@ function renderStocksCategoryList() {
 
   const searchVal = (document.getElementById('stocks-search-input')?.value || '').trim().toLowerCase();
 
-  // Filter findings in active repository
-  const repoFindings = indexedFindings.filter(f => Number(f.r) === Number(activeStocksRepoIndex));
+  // If activeStocksRepoIndex === 'all', include ALL findings!
+  const repoFindings = activeStocksRepoIndex === 'all'
+    ? indexedFindings
+    : indexedFindings.filter(f => Number(f.r) === Number(activeStocksRepoIndex));
 
   // If searchVal, match across findings
   const matchedFindings = searchVal
@@ -1737,3 +1757,104 @@ function handleQuickPhotoUpload(event) {
   reader.readAsDataURL(file);
 }
 
+
+
+// =========================================================
+// REPOSITORY MANAGEMENT (Reporto 1:1)
+// =========================================================
+
+function openNewRepoModal() {
+  const modal = document.getElementById('modal-new-repo');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeNewRepoModal() {
+  const modal = document.getElementById('modal-new-repo');
+  if (modal) modal.style.display = 'none';
+}
+
+function saveNewRepoSubmit() {
+  const name = (document.getElementById('new-repo-name')?.value || '').trim();
+  const catsStr = (document.getElementById('new-repo-categories')?.value || '').trim();
+  const desc = (document.getElementById('new-repo-desc')?.value || '').trim();
+
+  if (!name) {
+    alert('נא להזין שם עבור המאגר החדש.');
+    return;
+  }
+
+  if (!db.repos.includes(name)) {
+    db.repos.push(name);
+  }
+
+  if (catsStr) {
+    const cats = catsStr.split(',').map(c => c.trim()).filter(Boolean);
+    cats.forEach(c => {
+      if (!db.categories.includes(c)) db.categories.push(c);
+    });
+  }
+
+  // Save custom repos to localStorage
+  localStorage.setItem('BEDEK_CUSTOM_REPOS', JSON.stringify({
+    repos: db.repos,
+    categories: db.categories
+  }));
+
+  initDbIndex();
+  renderStocksBrowser();
+  closeNewRepoModal();
+  alert('המאגר "' + name + '" נוסף בהצלחה למערכת!');
+}
+
+function importRepoFromFile(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      let addedCount = 0;
+
+      if (data.findings && Array.isArray(data.findings)) {
+        const repoName = data.name || file.name.replace('.json', '');
+        let repoIdx = db.repos.indexOf(repoName);
+        if (repoIdx === -1) {
+          db.repos.push(repoName);
+          repoIdx = db.repos.length - 1;
+        }
+
+        data.findings.forEach(f => {
+          let catIdx = db.categories.indexOf(f.category || 'כללי');
+          if (catIdx === -1) {
+            db.categories.push(f.category || 'כללי');
+            catIdx = db.categories.length - 1;
+          }
+
+          db.findings.push({
+            id: 'imp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            r: repoIdx,
+            c: catIdx,
+            name: f.name || f.title || '',
+            std: f.std || f.standard || '',
+            rec: f.rec || f.recommendation || '',
+            note: f.note || '',
+            ut: f.unit || "יח'",
+            up: Number(f.price) || 350,
+            uq: Number(f.qty) || 1
+          });
+          addedCount++;
+        });
+
+        initDbIndex();
+        renderStocksBrowser();
+        alert('המאגר ייובא בהצלחה! נוספו ' + addedCount + ' ממצאים למאגר "' + repoName + '".');
+      } else {
+        alert('קובץ המאגר אינו בפורמט JSON נתמך (דרוש מערך findings).');
+      }
+    } catch (err) {
+      alert('שגיאה בקריאת קובץ המאגר: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
