@@ -24,7 +24,7 @@ const DEFAULT_ROOMS = [
 let customRooms = [];
 
 // Initialize Application
-document.addEventListener('DOMContentLoaded', () => {
+function startApp() {
   initDbIndex();
   loadReportsFromStorage();
   initActiveInspection();
@@ -33,7 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
   renderInspectionEditor();
   renderStocksBrowser();
   updateNavBadges();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startApp);
+} else {
+  startApp();
+}
 
 // Build Fast Search Indices for Findings DB
 let indexedFindings = [];
