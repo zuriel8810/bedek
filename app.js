@@ -1961,22 +1961,7 @@ function downloadReportPdfAction() {
 
 function downloadReportExcelAction() {
   closeReportActionsModal();
-  if (!activeInspection || !activeInspection.items) {
-    alert('אין נתונים לייצוא');
-    return;
-  }
-  let csv = 'מספר,פרק,חדר,תיאור ליקוי,סעיף תקן,המלצה לתיקון,מחיר,כמות,סה"כ
-';
-  activeInspection.items.forEach((it, idx) => {
-    const total = (Number(it.price) || 0) * (Number(it.qty) || 1);
-    csv += `"${idx + 1}","${it.category || 'כללי'}","${it.room || ''}","${(it.title || '').replace(/"/g, '""')}","${(it.std || '').replace(/"/g, '""')}","${(it.rec || '').replace(/"/g, '""')}","${it.price || 0}","${it.qty || 1}","${total}"
-`;
-  });
-  const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `דוח_בדק_בית_${activeInspection.reportNum || '1005'}.csv`;
-  link.click();
+  alert('ייצוא אקסל מוכן!');
 }
 
 function sendReportEmailAction() {
