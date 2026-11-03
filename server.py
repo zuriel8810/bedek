@@ -287,7 +287,7 @@ def generate_expert_response(user_query, image_data=None, room="סלון", force
             reply_paragraphs.append(f"📷 **מאפיינים חזותיים:** {' | '.join(img_features['hints'])}")
 
     reply_paragraphs.append(
-        f"👷 **חוות דעת הנדסית ({room}):**\n"
+        f"👷 **חוות דעת מקצועית ({room}):**\n"
         f"בבחינת הממצא, מדובר בליקוי מקצועי מסוג **{defect_title}**."
     )
 

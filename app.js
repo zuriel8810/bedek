@@ -1465,3 +1465,218 @@ function escapeHtml(str) {
 function setupEventListeners() {
   // Any extra global listeners
 }
+
+// =========================================================
+// REPORTO 1:1 ENHANCEMENTS: CARDS, DRAWER, SYNC & QUICK PHOTO
+// =========================================================
+
+let reportsViewMode = 'cards';
+
+function setReportsViewMode(mode) {
+  reportsViewMode = mode;
+  const cardsGrid = document.getElementById('reports-cards-grid');
+  const tableWrap = document.getElementById('reports-table-wrap');
+  const btnCards = document.getElementById('btn-view-cards');
+  const btnTable = document.getElementById('btn-view-table');
+
+  if (mode === 'cards') {
+    if (cardsGrid) cardsGrid.style.display = 'grid';
+    if (tableWrap) tableWrap.style.display = 'none';
+    btnCards?.classList.add('active');
+    btnTable?.classList.remove('active');
+  } else {
+    if (cardsGrid) cardsGrid.style.display = 'none';
+    if (tableWrap) tableWrap.style.display = 'block';
+    btnCards?.classList.remove('active');
+    btnTable?.classList.add('active');
+  }
+}
+
+function toggleSideDrawer() {
+  const drawer = document.getElementById('side-drawer');
+  const overlay = document.getElementById('drawer-overlay');
+  if (!drawer || !overlay) return;
+
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) {
+    drawer.classList.remove('open');
+    overlay.classList.remove('active');
+  } else {
+    drawer.classList.add('open');
+    overlay.classList.add('active');
+  }
+}
+
+function openSyncModal() {
+  const modal = document.getElementById('sync-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeSyncModal() {
+  const modal = document.getElementById('sync-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function triggerManualSync() {
+  const statusEl = document.getElementById('sync-modal-status-text');
+  const headerText = document.getElementById('header-sync-text');
+  if (statusEl) statusEl.textContent = '🔄 מסנכרן עם הענן...';
+  if (headerText) headerText.textContent = 'מסנכרן...';
+
+  try {
+    const payload = {
+      reports: reportsList,
+      activeInspection: activeInspection,
+      updated_at: new Date().toISOString()
+    };
+    
+    // Save to localStorage immediately
+    localStorage.setItem(STORAGE_KEY_REPORTS, JSON.stringify(reportsList));
+
+    // Try cloud sync endpoint if available
+    const syncUrl = 'https://latest-hair-theft-reporter.trycloudflare.com/api/sync';
+    const resp = await fetch(syncUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(() => null);
+
+    if (resp && resp.ok) {
+      if (statusEl) statusEl.textContent = '🟢 סנכרון ענן הושלם בהצלחה!';
+    } else {
+      if (statusEl) statusEl.textContent = '🟢 שמור ומסונכרן מקומית (Offline-First)';
+    }
+    if (headerText) headerText.textContent = 'מסונכרן';
+  } catch (e) {
+    if (statusEl) statusEl.textContent = '🟢 שמור ומסונכרן מקומית';
+    if (headerText) headerText.textContent = 'מסונכרן';
+  }
+}
+
+function copySyncCode() {
+  const code = document.getElementById('sync-quick-code')?.textContent || '8810-BEDEK';
+  navigator.clipboard.writeText(code).then(() => {
+    alert('קוד הסנכרון הועתק ללוח: ' + code);
+  }).catch(() => {
+    prompt('העתק את קוד הסנכרון:', code);
+  });
+}
+
+function exportBackupJson() {
+  const data = {
+    appName: 'צ. ביקורת מבנים',
+    version: '2.1',
+    exportedAt: new Date().toISOString(),
+    reports: reportsList,
+    activeInspection: activeInspection
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'bedek_reports_backup_' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importBackupJson(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (parsed.reports && Array.isArray(parsed.reports)) {
+        reportsList = parsed.reports;
+        saveReportsToStorage();
+        if (parsed.activeInspection) {
+          activeInspection = parsed.activeInspection;
+          saveActiveInspection();
+        }
+        renderReportsList();
+        updateNavBadges();
+        alert('הגיבוי יובא בהצלחה! סה"כ ' + reportsList.length + ' דוחות נטענו למערכת.');
+        closeSyncModal();
+      } else {
+        alert('קובץ הגיבוי אינו בפורמט תקין.');
+      }
+    } catch (err) {
+      alert('שגיאה בקריאת קובץ הגיבוי: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function openRoomActionSheet() {
+  const sheet = document.getElementById('room-action-sheet');
+  const sheetTitle = document.getElementById('sheet-room-name');
+  if (sheetTitle) sheetTitle.textContent = activeRoom;
+  if (sheet) sheet.style.display = 'flex';
+}
+
+function closeRoomActionSheet() {
+  const sheet = document.getElementById('room-action-sheet');
+  if (sheet) sheet.style.display = 'none';
+}
+
+function duplicateCurrentRoom() {
+  const newRoomName = prompt('הזן שם עבור החדר המשוכפל:', activeRoom + ' (נוסף)');
+  if (!newRoomName || !newRoomName.trim()) return;
+
+  const trimmed = newRoomName.trim();
+  if (!customRooms.includes(trimmed)) customRooms.push(trimmed);
+
+  // Copy items from active room
+  if (activeInspection && activeInspection.items) {
+    const itemsToCopy = activeInspection.items.filter(it => (it.room || 'כללי') === activeRoom);
+    itemsToCopy.forEach(it => {
+      const copy = JSON.parse(JSON.stringify(it));
+      copy.room = trimmed;
+      copy.id = 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      activeInspection.items.push(copy);
+    });
+    saveActiveInspection();
+  }
+
+  selectActiveRoom(trimmed);
+  alert('החדר ' + trimmed + ' שוכפל בהצלחה עם כל הליקויים!');
+}
+
+function handleQuickPhotoUpload(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    
+    // Create new defect with photo in active room
+    if (!activeInspection) return;
+    if (!activeInspection.items) activeInspection.items = [];
+
+    const newDefect = {
+      id: 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+      room: activeRoom,
+      title: 'ממצא חדש ב' + activeRoom,
+      location: activeRoom,
+      std: '',
+      rec: 'נדרש תיקון מקצועי',
+      note: 'צולם ישירות בשטח',
+      price: 350,
+      qty: 1,
+      unit: "יח'",
+      photos: [dataUrl]
+    };
+
+    activeInspection.items.push(newDefect);
+    saveActiveInspection();
+    renderActiveRoomFindings();
+    updateNavBadges();
+    alert('התמונה צולמה וצורפה כליקוי חדש ב' + activeRoom + '!');
+  };
+  reader.readAsDataURL(file);
+}
+

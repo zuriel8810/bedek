@@ -17,13 +17,19 @@
   <!-- Top App Header -->
   <header class="app-header">
     <div class="header-top">
-      <div class="brand-title">
-        <span>🏗️ צ. ביקורת מבנים</span>
-        <span class="brand-badge">Reporto 1:1</span>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button type="button" class="btn-hamburger" onclick="toggleSideDrawer()" aria-label="תפריט">☰</button>
+        <div class="brand-title">
+          <span>🏗️ צ. ביקורת מבנים</span>
+          <span class="brand-badge">Reporto 1:1</span>
+        </div>
       </div>
-      <div class="inspector-info-tag">
-        <span>צוריאל צדוק • 053-9514613</span>
-        <button type="button" class="btn btn-sm btn-outline" style="background:rgba(255,255,255,0.18); border:none; color:#fff;" onclick="openApiModal()" title="הגדרות בינה מלאכותית">⚙️ AI</button>
+      <div class="header-user-tag">
+        <span class="user-greeting-name">צדוק צוריאל • בעלים</span>
+        <button type="button" class="sync-badge-pill" id="header-sync-status" onclick="openSyncModal()" title="לחץ לסנכרון">
+          <span class="sync-dot"></span>
+          <span id="header-sync-text">מסונכרן</span>
+        </button>
       </div>
     </div>
   </header>
@@ -116,7 +122,20 @@
       </div>
 
       <!-- Reports Table -->
-      <div class="reports-table-wrap">
+      <div class="view-toggle-bar">
+        <div style="font-weight:700; color:var(--text); font-size:0.92rem;">רשימת בדיקות:</div>
+        <div class="view-toggle-btns">
+          <button type="button" class="view-toggle-btn active" id="btn-view-cards" onclick="setReportsViewMode('cards')" title="תצוגת כרטיסיות ריפורטו">🗂️ כרטיסיות</button>
+          <button type="button" class="view-toggle-btn" id="btn-view-table" onclick="setReportsViewMode('table')" title="תצוגת טבלה">📊 טבלה</button>
+        </div>
+      </div>
+
+      <!-- Reporto Inspection Cards Grid (1:1 Mobile & Desktop) -->
+      <div id="reports-cards-grid" class="reports-cards-grid">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="reports-table-wrap" id="reports-table-wrap" style="display:none;">
         <table class="reports-table">
           <thead>
             <tr>
@@ -571,5 +590,131 @@
       });
     }
   </script>
+
+  <!-- Floating Action Button (FAB) Reporto 1:1 -->
+  <button type="button" class="btn-fab-new-report" onclick="openNewReportModal()" title="פתח דוח חדש">
+    <span style="font-size:1.3rem;">➕</span>
+    <span>דוח חדש</span>
+  </button>
+
+  <!-- Side Drawer Overlay & Panel (Reporto 1:1) -->
+  <div id="drawer-overlay" class="drawer-overlay" onclick="toggleSideDrawer()"></div>
+  <aside id="side-drawer" class="side-drawer">
+    <div class="drawer-header">
+      <div class="drawer-avatar">צצ</div>
+      <div style="flex:1;">
+        <div class="drawer-name">צדוק צוריאל</div>
+        <div class="drawer-role">בעלים • צ. ביקורת מבנים</div>
+        <div class="drawer-email">zadok8810@gmail.com</div>
+      </div>
+      <button type="button" class="drawer-close-btn" onclick="toggleSideDrawer()">✕</button>
+    </div>
+    <div class="drawer-menu">
+      <a href="javascript:void(0)" class="drawer-item" onclick="switchNavTab('reports'); toggleSideDrawer();">
+        <span class="drawer-icon">📑</span>
+        <span>דוחות בדיקה</span>
+        <span class="drawer-badge" id="drawer-badge-reports">1</span>
+      </a>
+      <a href="javascript:void(0)" class="drawer-item" onclick="switchNavTab('editor'); toggleSideDrawer();">
+        <span class="drawer-icon">✏️</span>
+        <span>עורך בדיקה</span>
+      </a>
+      <a href="javascript:void(0)" class="drawer-item" onclick="switchNavTab('stocks'); toggleSideDrawer();">
+        <span class="drawer-icon">📦</span>
+        <span>מאגרים (1,773 סעיפים)</span>
+      </a>
+      <a href="javascript:void(0)" class="drawer-item" onclick="switchNavTab('report'); toggleSideDrawer();">
+        <span class="drawer-icon">📄</span>
+        <span>הפקת דוח מסכם</span>
+      </a>
+      <a href="javascript:void(0)" class="drawer-item" onclick="openSyncModal(); toggleSideDrawer();">
+        <span class="drawer-icon">🔄</span>
+        <span>סנכרון ענן ומכשירים</span>
+      </a>
+      <a href="javascript:void(0)" class="drawer-item" onclick="openNewReportModal(); toggleSideDrawer();">
+        <span class="drawer-icon">➕</span>
+        <span>דוח חדש</span>
+      </a>
+      <a href="javascript:void(0)" class="drawer-item" onclick="switchNavTab('chat'); toggleSideDrawer();">
+        <span class="drawer-icon">🤖</span>
+        <span>עוזר AI וסריקה</span>
+      </a>
+      <a href="javascript:void(0)" class="drawer-item" onclick="openApiModal(); toggleSideDrawer();">
+        <span class="drawer-icon">⚙️</span>
+        <span>הגדרות בינה מלאכותית</span>
+      </a>
+    </div>
+    <div class="drawer-footer">
+      <b>צ. ביקורת מבנים • v2.1</b><br>
+      מערכת דוחות וחוות דעת מומחה<br>
+      טלפון: 053-9514613
+    </div>
+  </aside>
+
+  <!-- Sync Modal -->
+  <div id="sync-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">🔄 סנכרון נתונים בין מחשב לנייד</div>
+        <button type="button" class="modal-close-btn" onclick="closeSyncModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="sync-status-box">
+          <div style="font-weight:700; margin-bottom:4px; font-size:0.95rem;">סטטוס סנכרון:</div>
+          <div id="sync-modal-status-text" style="color:var(--success); font-weight:800;">🟢 המערכת מסונכרנת (פעיל מקומית וענן)</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
+            כל שינוי או הוספת ממצא נשמרים מקומית באופן מיידי (Offline-First) ומסונכרנים.
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
+          <button type="button" class="btn btn-primary btn-block" onclick="triggerManualSync()">
+            <span>🔄 סנכרן עכשיו עם הענן</span>
+          </button>
+
+          <div style="text-align:center; font-weight:700; color:var(--text-muted); font-size:0.85rem; margin:4px 0;">— סנכרון מהיר והעברה בין מכשירים —</div>
+
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; text-align:center;">
+            <div style="font-size:0.85rem; color:#475569; margin-bottom:6px;">קוד סנכרון מהיר לחיבור מחשב / נייד:</div>
+            <div id="sync-quick-code" style="font-size:1.4rem; font-weight:800; letter-spacing:4px; color:var(--primary); font-family:monospace;">8810-BEDEK</div>
+            <button type="button" class="btn btn-sm btn-outline" style="margin-top:8px;" onclick="copySyncCode()">📋 העתק קוד סנכרון</button>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-top:4px;">
+            <button type="button" class="btn btn-outline btn-block" onclick="exportBackupJson()">
+              <span>💾 ייצוא גיבוי (JSON)</span>
+            </button>
+            <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('import-file-input').click()">
+              <span>📥 ייבוא מגיבוי</span>
+            </button>
+            <input type="file" id="import-file-input" style="display:none;" accept=".json" onchange="importBackupJson(event)">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Room Action Sheet Modal -->
+  <div id="room-action-sheet" class="modal-overlay" style="display:none;" onclick="closeRoomActionSheet()">
+    <div class="action-sheet-card" onclick="event.stopPropagation()">
+      <div class="action-sheet-title">פעולות לחדר: <span id="sheet-room-name">סלון</span></div>
+      <button type="button" class="action-sheet-btn" onclick="promptAddNewRoom(); closeRoomActionSheet();">
+        <span>➕ הוסף חדר חדש לבדיקה</span>
+      </button>
+      <button type="button" class="action-sheet-btn" onclick="openAddFindingModal(); closeRoomActionSheet();">
+        <span>📦 בחר ממצא מתוך המאגר</span>
+      </button>
+      <button type="button" class="action-sheet-btn" onclick="openCustomFindingModal(); closeRoomActionSheet();">
+        <span>✍️ הוסף ממצא מותאם אישית</span>
+      </button>
+      <button type="button" class="action-sheet-btn" onclick="duplicateCurrentRoom(); closeRoomActionSheet();">
+        <span>📋 שכפל חדר זה</span>
+      </button>
+      <button type="button" class="action-sheet-btn action-sheet-btn-cancel" onclick="closeRoomActionSheet()">
+        <span>ביטול</span>
+      </button>
+    </div>
+  </div>
+
 </body>
 </html>
