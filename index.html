@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="בדק בית">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=40">
+  <link rel="stylesheet" href="style.css?v=42">
 </head>
 <body>
 
@@ -326,7 +326,7 @@
   <!-- ==============================================
        MODAL 1: NEW REPORT FORM (הקמת דוח חדש)
        ============================================== -->
-  <div id="modal-new-report" class="modal-overlay" onclick="if(event.target === this) closeNewReportModal()">
+  <div id="modal-new-report" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeNewReportModal()">
     <div class="modal-sheet">
       <div class="modal-header">
         <h3>➕ יצירת דוח בדיקה חדש</h3>
@@ -396,7 +396,7 @@
   <!-- ==============================================
        MODAL 2: ADD / SELECT FINDING MODAL
        ============================================== -->
-  <div id="modal-select-finding" class="modal-overlay" onclick="if(event.target === this) closeSelectFindingModal()">
+  <div id="modal-select-finding" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeSelectFindingModal()">
     <div class="modal-sheet" style="max-width:800px;">
       <div class="modal-header">
         <h3 id="select-finding-room-title">➕ הוספת ממצא לחדר</h3>
@@ -430,7 +430,7 @@
   <!-- ==============================================
        MODAL 3: EDIT / CUSTOM FINDING FORM
        ============================================== -->
-  <div id="modal-edit-finding" class="modal-overlay" onclick="if(event.target === this) closeEditModal()">
+  <div id="modal-edit-finding" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeEditModal()">
     <div class="modal-sheet">
       <div class="modal-header">
         <h3 id="edit-modal-title">עריכת ממצא</h3>
@@ -504,7 +504,7 @@
   <!-- ==============================================
        MODAL 4: API SETTINGS (GEMINI / OPENAI)
        ============================================== -->
-  <div id="modal-api-settings" class="modal-overlay" onclick="if(event.target === this) closeApiModal()">
+  <div id="modal-api-settings" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeApiModal()">
     <div class="modal-sheet">
       <div class="modal-header">
         <h3>⚙️ הגדרות בינה מלאכותית (Client-Side)</h3>
@@ -564,7 +564,7 @@
   <!-- SCRIPTS -->
   <script src="shimon_inspection.js"></script>
   <script src="findings_data.js"></script>
-  <script src="app.js?v=40"></script>
+  <script src="app.js?v=42"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

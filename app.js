@@ -374,16 +374,19 @@ function deleteReport(reportId) {
 }
 
 function openNewReportModal() {
-  document.getElementById('new-client-name').value = '';
-  document.getElementById('new-client-phone').value = '';
-  document.getElementById('new-address').value = '';
-  document.getElementById('new-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('new-general-notes').value = '';
-  document.getElementById('modal-new-report').classList.add('active');
+  const modal = document.getElementById('modal-new-report');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+  }
 }
 
 function closeNewReportModal() {
-  document.getElementById('modal-new-report').classList.remove('active');
+  const modal = document.getElementById('modal-new-report');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('active');
+  }
 }
 
 function createNewReportSubmit() {
@@ -1546,15 +1549,19 @@ function scrollChatToBottom() {
 // API Settings Modal
 // ---------------------------------------------------------
 function openApiModal() {
-  const provider = localStorage.getItem('bedek_ai_provider') || 'gemini';
-  const key = localStorage.getItem('bedek_ai_api_key') || '';
-  document.getElementById('api-provider').value = provider;
-  document.getElementById('api-key-value').value = key;
-  document.getElementById('modal-api-settings').classList.add('active');
+  const modal = document.getElementById('modal-api-settings');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+  }
 }
 
 function closeApiModal() {
-  document.getElementById('modal-api-settings').classList.remove('active');
+  const modal = document.getElementById('modal-api-settings');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('active');
+  }
 }
 
 function saveApiSettings() {
