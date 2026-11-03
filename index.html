@@ -10,128 +10,48 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="בדק בית">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=42">
+  <link rel="stylesheet" href="style.css?v=50">
 </head>
 <body>
 
-  <!-- Top App Header -->
-  <header class="app-header">
-    <div class="header-top">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <button type="button" class="btn-hamburger" onclick="toggleSideDrawer()" aria-label="תפריט">☰</button>
-        <div class="brand-title">
-          <span>🏗️ צ. ביקורת מבנים</span>
-          <span class="brand-badge">Reporto 1:1</span>
-        </div>
+  <!-- Reporto 1:1 Top Header (Screenshot 392657) -->
+  <header class="reporto-top-bar">
+    <div class="reporto-bar-row1">
+      <div class="reporto-greeting-wrap">
+        <button type="button" class="reporto-btn-hamburger" onclick="toggleSideDrawer()" aria-label="תפריט">☰</button>
+        <span class="reporto-greeting-text">היי צדוק צוריאל</span>
       </div>
-      <div class="header-user-tag">
-        <span class="user-greeting-name">צדוק צוריאל • בעלים</span>
-        <button type="button" class="sync-badge-pill" id="header-sync-status" onclick="openSyncModal()" title="לחץ לסנכרון">
-          <span class="sync-dot"></span>
-          <span id="header-sync-text">מסונכרן</span>
-        </button>
+      <div class="reporto-top-icons">
+        <button type="button" class="reporto-icon-btn" onclick="toggleSideDrawer()" title="התראות">🔔</button>
+        <button type="button" class="reporto-icon-btn" onclick="document.getElementById('reports-search-input')?.focus()" title="חיפוש">🔍</button>
       </div>
+    </div>
+    <div class="reporto-bar-row2">
+      <div class="reporto-user-sub">
+        <span class="user-sub-icon">👤</span>
+        <span>צדוק צוריאל - בעלים</span>
+      </div>
+      <button type="button" class="btn-reporto-new" onclick="openNewReportModal()">
+        <span>+ דוח חדש</span>
+      </button>
     </div>
   </header>
 
-  <!-- Top Sticky Navigation Tabs (Reporto 1:1) -->
-  <nav class="top-nav">
-    <div class="top-nav-inner">
-      <button type="button" class="nav-tab-btn active" data-tab="reports" onclick="switchNavTab('reports')">
-        <span>📑</span>
-        <span>דוחות</span>
-        <span class="nav-tab-badge" id="top-badge-reports">1</span>
-      </button>
-      <button type="button" class="nav-tab-btn" data-tab="editor" onclick="switchNavTab('editor')">
-        <span>✏️</span>
-        <span>עורך בדיקה</span>
-        <span class="nav-tab-badge" id="top-badge-editor">0</span>
-      </button>
-      <button type="button" class="nav-tab-btn" data-tab="stocks" onclick="switchNavTab('stocks')">
-        <span>📦</span>
-        <span>מאגרים</span>
-        <span class="nav-tab-badge">1,773</span>
-      </button>
-      <button type="button" class="nav-tab-btn" data-tab="report" onclick="switchNavTab('report')">
-        <span>📄</span>
-        <span>הפקת דוח</span>
-      </button>
-      <button type="button" class="nav-tab-btn" data-tab="chat" onclick="switchNavTab('chat')">
-        <span>🤖</span>
-        <span>עוזר AI</span>
-      </button>
-    </div>
-  </nav>
-
   <!-- ==============================================
-       TAB 1: REPORTS DASHBOARD (דוחות)
+       TAB 1: REPORTO HOME & REPORTS DASHBOARD (1:1)
        ============================================== -->
-  <main id="tab-reports" class="tab-content active container">
-    <!-- Greeting & Stats Grid -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon">📑</div>
-        <div>
-          <div class="stat-val" id="stat-total-reports">1</div>
-          <div class="stat-lbl">סה"כ דוחות בדיקה</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:#fffbeb; color:#b45309;">⏳</div>
-        <div>
-          <div class="stat-val" id="stat-in-progress">1</div>
-          <div class="stat-lbl">דוחות בעבודה</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:#ecfdf5; color:#047857;">✅</div>
-        <div>
-          <div class="stat-val" id="stat-completed">0</div>
-          <div class="stat-lbl">דוחות שהושלמו</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:#eff6ff; color:#1d4ed8;">🔍</div>
-        <div>
-          <div class="stat-val" id="stat-total-findings">31</div>
-          <div class="stat-lbl">ליקויים שנמצאו</div>
-        </div>
+  <main id="tab-reports" class="tab-content active" style="padding: 10px 14px 80px 14px; max-width: 820px; margin: 0 auto;">
+    <!-- Reporto Search Bar (1:1) -->
+    <div class="reporto-search-container">
+      <div class="reporto-search-box">
+        <span class="reporto-search-magnifier">🔍</span>
+        <input type="text" id="reports-search-input" class="reporto-search-field" placeholder="חפש לפי מספר, לקוח, כתובת או תווית..." oninput="renderReportsList()">
+        <button type="button" class="reporto-search-filter-btn" title="סינון">≡</button>
       </div>
     </div>
 
-    <!-- Reports Action Toolbar -->
-    <div class="card">
-      <div class="card-header-flex">
-        <div style="font-weight:800; font-size:1.1rem; color:var(--primary);">רשימת דוחות בדיקה</div>
-        <button type="button" class="btn btn-gold" onclick="openNewReportModal()">
-          <span>➕</span>
-          <span>דוח חדש</span>
-        </button>
-      </div>
-
-      <div class="search-bar-wrap">
-        <input type="text" id="reports-search-input" class="search-input" placeholder="חיפוש דוח לפי שם לקוח, עיר או כתובת..." oninput="renderReportsList()">
-        <span class="search-icon">🔍</span>
-      </div>
-
-      <!-- Filter Buttons -->
-      <div style="display:flex; gap:8px; margin-bottom:14px;">
-        <button type="button" class="btn btn-sm btn-outline reports-filter-btn active" data-filter="all" onclick="filterReports('all', this)">הכל</button>
-        <button type="button" class="btn btn-sm btn-outline reports-filter-btn" data-filter="draft" onclick="filterReports('draft', this)">בעבודה (טיוטה)</button>
-        <button type="button" class="btn btn-sm btn-outline reports-filter-btn" data-filter="completed" onclick="filterReports('completed', this)">הושלם</button>
-      </div>
-
-      <!-- Reports Table -->
-      <div class="view-toggle-bar">
-        <div style="font-weight:700; color:var(--text); font-size:0.92rem;">רשימת בדיקות:</div>
-        <div class="view-toggle-btns">
-          <button type="button" class="view-toggle-btn active" id="btn-view-cards" onclick="setReportsViewMode('cards')" title="תצוגת כרטיסיות ריפורטו">🗂️ כרטיסיות</button>
-          <button type="button" class="view-toggle-btn" id="btn-view-table" onclick="setReportsViewMode('table')" title="תצוגת טבלה">📊 טבלה</button>
-        </div>
-      </div>
-
-      <!-- Reporto Inspection Cards Grid (1:1 Mobile & Desktop) -->
-      <div id="reports-cards-grid" class="reports-cards-grid">
+    <!-- Cards Grid Container -->
+    <div id="reports-cards-grid" class="reports-cards-grid">
         <!-- Rendered by JS -->
       </div>
 
@@ -538,33 +458,29 @@
   <!-- ==============================================
        BOTTOM NAVIGATION (MOBILE)
        ============================================== -->
-  <nav class="bottom-nav">
-    <button type="button" class="bottom-nav-btn active" data-tab="reports" onclick="switchNavTab('reports')">
-      <span class="bottom-nav-icon">📑</span>
+  <nav class="reporto-bottom-nav">
+    <button type="button" class="rep-nav-item active" data-tab="reports" onclick="switchNavTab('reports')">
+      <span class="rep-nav-icon">🏠</span>
+      <span>בית</span>
+    </button>
+    <button type="button" class="rep-nav-item" data-tab="editor" onclick="switchNavTab('editor')">
+      <span class="rep-nav-icon">📑</span>
       <span>דוחות</span>
     </button>
-    <button type="button" class="bottom-nav-btn" data-tab="editor" onclick="switchNavTab('editor')">
-      <span class="bottom-nav-icon">✏️</span>
-      <span>עורך</span>
-    </button>
-    <button type="button" class="bottom-nav-btn" data-tab="stocks" onclick="switchNavTab('stocks')">
-      <span class="bottom-nav-icon">📦</span>
+    <button type="button" class="rep-nav-item" data-tab="stocks" onclick="switchNavTab('stocks')">
+      <span class="rep-nav-icon">📦</span>
       <span>מאגרים</span>
     </button>
-    <button type="button" class="bottom-nav-btn" data-tab="report" onclick="switchNavTab('report')">
-      <span class="bottom-nav-icon">📄</span>
-      <span>דוח</span>
-    </button>
-    <button type="button" class="bottom-nav-btn" data-tab="chat" onclick="switchNavTab('chat')">
-      <span class="bottom-nav-icon">🤖</span>
-      <span>AI</span>
+    <button type="button" class="rep-nav-item" onclick="toggleSideDrawer()">
+      <span class="rep-nav-icon">☰</span>
+      <span>עוד</span>
     </button>
   </nav>
 
   <!-- SCRIPTS -->
   <script src="shimon_inspection.js"></script>
   <script src="findings_data.js"></script>
-  <script src="app.js?v=45"></script>
+  <script src="app.js?v=50"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
