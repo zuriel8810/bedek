@@ -67,9 +67,56 @@ function loadReportsFromStorage() {
     }
   }
 
-  // Pre-populate with Shimon Meir Cohen Kadosh report if empty
-  if (reportsList.length === 0 && window.SHIMON_INSPECTION) {
-    reportsList.push(JSON.parse(JSON.stringify(window.SHIMON_INSPECTION)));
+  // Ensure default exact reports from Reporto screenshot 393175 (#1006, #1005, #1004)
+  const defaultReports = [
+    {
+      id: 'insp_nisayon_1006',
+      reportNumber: '1006',
+      clientName: 'נסיון',
+      clientPhone: '053-9514613',
+      address: 'נסיון',
+      propertyType: 'בדק בית דירתי',
+      date: '2026-11-03',
+      displayDate: '03/11/2026',
+      monthGroup: 'נובמבר 2026',
+      status: 'בעבודה',
+      inspectorName: 'צדוק צוריאל',
+      items: []
+    },
+    {
+      id: 'insp_shimon_meir_107',
+      reportNumber: '1005',
+      clientName: 'שמעון מאיר כהן קדוש',
+      clientPhone: '050-4148810',
+      address: 'יהדות מרוקו 107 נתיבות קומה 1 דירה 5',
+      propertyType: 'דירה מקבלן',
+      templateTag: 'בדק בית דירתי',
+      date: '2026-10-31',
+      displayDate: '31/10/2026',
+      monthGroup: 'אוקטובר 2026',
+      status: 'בעבודה',
+      inspectorName: 'צדוק צוריאל',
+      items: (window.SHIMON_INSPECTION && window.SHIMON_INSPECTION.items) || []
+    },
+    {
+      id: 'insp_moshe_perez_42',
+      reportNumber: '1004',
+      clientName: 'משה פרץ',
+      clientPhone: '052-1234567',
+      address: 'משה שרת 42 אופקים',
+      propertyType: 'בדק בית דירה יד 2',
+      templateTag: 'בדק בית דירה יד 2',
+      date: '2026-10-08',
+      displayDate: '08/10/2026',
+      monthGroup: 'אוקטובר 2026',
+      status: 'בעבודה',
+      inspectorName: 'צדוק צוריאל',
+      items: []
+    }
+  ];
+
+  if (!reportsList || reportsList.length < 3) {
+    reportsList = defaultReports;
     saveReportsToStorage();
   }
 }
@@ -204,32 +251,10 @@ function filterReports(status, btnElement) {
 }
 
 function renderReportsList() {
-  const cardsGrid = document.getElementById('reports-cards-grid');
-  if (!cardsGrid) return;
+  const container = document.getElementById('reports-cards-container');
+  if (!container) return;
 
   const searchVal = (document.getElementById('reports-search-input')?.value || '').trim().toLowerCase();
-
-  // Ensure default reports (#1005 Shimon Meir & #1004 Moshe Perez) exist
-  if (reportsList.length <= 1) {
-    const has1004 = reportsList.some(r => r.reportNumber === '1004' || (r.clientName && r.clientName.includes('משה פרץ')));
-    if (!has1004) {
-      reportsList.push({
-        id: 'insp_moshe_perez_42',
-        reportNumber: '1004',
-        clientName: 'משה פרץ',
-        clientPhone: '052-1234567',
-        address: 'משה שרת 42 אופקים',
-        propertyType: 'בדק בית דירה יד 2',
-        date: '08/10/2026',
-        status: 'בעבודה',
-        inspectorName: 'צדוק צוריאל',
-        inspectorTitle: 'בודק מוסמך ואיתור נזילות',
-        companyName: 'צ. ביקורת מבנים',
-        items: []
-      });
-      saveReportsToStorage();
-    }
-  }
 
   let filtered = reportsList.filter(rep => {
     if (searchVal) {
@@ -243,57 +268,82 @@ function renderReportsList() {
   });
 
   if (filtered.length === 0) {
-    cardsGrid.innerHTML = '<div style="text-align:center; padding:35px 20px; color:#64748b;">לא נמצאו דוחות תואמים לחיפוש.</div>';
+    container.innerHTML = '<div style="text-align:center; padding:40px 20px; color:#64748b;">לא נמצאו דוחות תואמים לחיפוש.</div>';
     return;
   }
 
-  // Render Month Header (Reporto 1:1 Screenshot 392657)
-  let html = `
-    <div class="reporto-month-header">
-      <span class="month-title">אוקטובר 2026</span>
-      <span class="month-count-badge">${filtered.length}</span>
-    </div>
-  `;
+  // Group by Month (Reporto 1:1 Screenshot 393175)
+  const groups = {};
+  filtered.forEach(rep => {
+    let m = rep.monthGroup;
+    if (!m) {
+      const d = rep.date || '';
+      if (d.includes('2026-11')) m = 'נובמבר 2026';
+      else if (d.includes('2026-10')) m = 'אוקטובר 2026';
+      else m = 'נובמבר 2026';
+    }
+    if (!groups[m]) groups[m] = [];
+    groups[m].push(rep);
+  });
 
-  // Render each Report Card exactly as in screenshot 392657
-  html += filtered.map((rep, idx) => {
-    const reportNum = rep.reportNumber ? rep.reportNumber.replace('#', '') : (idx === 0 ? '1005' : '1004');
-    const displayDate = rep.date === '2026-10-30' ? '31/10/2026' : (rep.date || '31/10/2026');
-    const propertyTypeDisplay = (rep.propertyType && (rep.propertyType.includes('חדשה') || rep.propertyType.includes('קבלן'))) ? 'דירה מקבלן' : (rep.propertyType || 'בדק בית');
-    const templateTag = (idx === 1 || (rep.propertyType && rep.propertyType.includes('יד 2'))) ? 'בדק בית דירה יד 2' : 'בדק בית דירתי';
-    const clientName = rep.clientName || (idx === 0 ? 'שמעון מאיר כהן קדוש' : 'משה פרץ');
-    const address = rep.address || (idx === 0 ? 'יהדות מרוקו 107 נתיבות קומה 1 דירה 5' : 'משה שרת 42 אופקים');
+  let html = '';
+  const groupOrder = ['נובמבר 2026', 'אוקטובר 2026'];
+  Object.keys(groups).forEach(k => { if (!groupOrder.includes(k)) groupOrder.push(k); });
 
-    return `
-      <div class="rep-card-item" onclick="openReportInEditor('${rep.id}')">
-        <div class="rep-card-row1">
-          <span class="rep-card-date">📅 ${displayDate} • ${propertyTypeDisplay}</span>
-          <span class="rep-card-status">> בעבודה ▾</span>
-        </div>
+  groupOrder.forEach(mKey => {
+    const list = groups[mKey];
+    if (!list || list.length === 0) return;
 
-        <div class="rep-card-row2">
-          <span class="rep-card-address">${escapeHtml(address)}</span>
-          <span class="rep-card-num">${reportNum}</span>
-        </div>
+    html += '<div class="reporto-month-row">' +
+      '<span class="reporto-month-title">' + mKey + '</span>' +
+      '<span class="reporto-month-count">' + list.length + '</span>' +
+    '</div>' +
+    '<div class="reporto-card-box">';
 
-        <div class="rep-card-row3">
-          <span>👤 ${escapeHtml(clientName)}</span>
-          <span>•</span>
-          <span>👷 צדוק צוריאל</span>
-        </div>
+    list.forEach((rep, idx) => {
+      const rNum = rep.reportNumber || (1006 - idx);
+      const dDate = rep.displayDate || rep.date || '03/11/2026';
+      const cName = rep.clientName || '';
+      const addr = rep.address || '';
+      const tagText = rep.templateTag || (rep.propertyType && rep.propertyType.includes('יד 2') ? 'בדק בית דירה יד 2' : 'בדק בית דירתי');
 
-        <div class="rep-card-row4">
-          <span class="rep-card-tag">${templateTag}</span>
-          <div class="rep-card-quick-actions" onclick="event.stopPropagation()">
-            <button type="button" class="rep-mini-btn" onclick="openReportInPreview('${rep.id}')">📄 דוח</button>
-            <button type="button" class="rep-mini-btn" onclick="openReportInEditor('${rep.id}')">✏️ ערוך</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
+      const tagBadge = rep.propertyType === 'דירה מקבלן' ? 
+        '<span class="rep-tag-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>דירה מקבלן</span>' : '';
 
-  cardsGrid.innerHTML = html;
+      const divider = (idx < list.length - 1) ? '<div class="reporto-card-divider"></div>' : '';
+
+      html += '<div class="reporto-card-item" onclick="openReportInEditor('' + rep.id + '')">' +
+        '<div class="rep-row-top">' +
+          '<div class="rep-top-right">' +
+            '<span class="rep-date">' + dDate + '</span>' +
+            tagBadge +
+          '</div>' +
+          '<div class="rep-top-left">' +
+            '<span class="rep-status-text">בעבודה</span>' +
+            '<span class="rep-status-dot"></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="rep-row-mid">' +
+          '<div class="rep-address">' + escapeHtml(addr) + '</div>' +
+          '<div class="rep-num">' + rNum + '</div>' +
+        '</div>' +
+        '<div class="rep-row-bot">' +
+          '<div class="rep-bot-right">' +
+            '<div class="rep-client">' + escapeHtml(cName) + '</div>' +
+            '<div class="rep-subtag">' + tagText + '</div>' +
+          '</div>' +
+          '<div class="rep-bot-left">' +
+            '<span>צדוק צוריאל</span>' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' +
+          '</div>' +
+        '</div>' +
+      '</div>' + divider;
+    });
+
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
 }
 
 function openReportInEditor(reportId) {

@@ -1287,3 +1287,338 @@ body {
   margin-top: 24px;
 }
 
+
+
+/* ========================================================
+   REPORTO 1:1 EXACT STYLING (Screenshot 393175)
+   ======================================================== */
+:root {
+  --rep-bg: #f5f6fb;
+  --rep-text-main: #0f172a;
+  --rep-text-sub: #64748b;
+  --rep-text-muted: #94a3b8;
+  --rep-purple: #7928ca;
+  --rep-purple-hover: #6820ba;
+  --rep-border: #e2e8f0;
+  --rep-card-bg: #ffffff;
+  --rep-status-orange: #f59e0b;
+}
+
+body {
+  background-color: var(--rep-bg) !important;
+  color: var(--rep-text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  margin: 0;
+  padding: 0;
+  direction: rtl;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header */
+.reporto-header {
+  padding: 16px 16px 12px 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.reporto-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.reporto-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reporto-user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.reporto-user-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.reporto-user-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--rep-text-main);
+  line-height: 1.25;
+}
+
+.reporto-user-role {
+  font-size: 0.82rem;
+  color: var(--rep-text-sub);
+  margin-top: 3px;
+}
+
+.reporto-search-top-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Primary Action Button (+ צור דוח) */
+.reporto-create-btn {
+  width: 100%;
+  height: 48px;
+  background: var(--rep-purple);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(121, 40, 202, 0.25);
+  margin-bottom: 14px;
+  transition: opacity 0.15s ease;
+}
+
+.reporto-create-btn:active {
+  opacity: 0.9;
+}
+
+/* Search Bar */
+.reporto-search-box {
+  background: #ffffff;
+  border: 1px solid var(--rep-border);
+  border-radius: 8px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.reporto-filter-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.reporto-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.92rem;
+  color: var(--rep-text-main);
+  background: transparent;
+  padding: 0 10px;
+  text-align: right;
+  direction: rtl;
+}
+
+.reporto-search-icon {
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+}
+
+/* Reports Container & Cards */
+#tab-reports {
+  padding: 0 16px 85px 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.reporto-month-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 6px 8px 6px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.reporto-month-count {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.reporto-card-box {
+  background: #ffffff;
+  border: 1px solid var(--rep-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.reporto-card-item {
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.reporto-card-item:hover, .reporto-card-item:active {
+  background: #f8fafc;
+}
+
+.rep-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.rep-top-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--rep-text-sub);
+}
+
+.rep-date {
+  color: var(--rep-text-sub);
+}
+
+.rep-tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--rep-text-sub);
+  font-size: 0.8rem;
+}
+
+.rep-top-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #b45309; /* dark amber */
+}
+
+.rep-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--rep-status-orange);
+}
+
+.rep-row-mid {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.rep-address {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--rep-text-main);
+  flex: 1;
+  padding-left: 10px;
+  line-height: 1.35;
+}
+
+.rep-num {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.rep-row-bot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.rep-bot-right {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rep-client {
+  font-size: 0.85rem;
+  color: var(--rep-text-sub);
+}
+
+.rep-subtag {
+  font-size: 0.8rem;
+  color: var(--rep-text-muted);
+}
+
+.rep-bot-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: var(--rep-text-sub);
+}
+
+.reporto-card-divider {
+  height: 1px;
+  background-color: #f1f5f9;
+  margin: 0 16px;
+}
+
+/* Bottom Nav Bar 1:1 */
+.reporto-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 58px;
+  background: #ffffff;
+  border-top: 1px solid var(--rep-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.rep-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 600;
+  gap: 3px;
+  cursor: pointer;
+  padding: 6px 20px;
+}
+
+.rep-nav-btn.active {
+  color: var(--rep-purple) !important;
+}
+
+.rep-nav-btn.active .rep-nav-svg {
+  stroke: var(--rep-purple) !important;
+}
+
+.btn-fab-new-report {
+  display: none !important;
+}
