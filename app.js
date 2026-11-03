@@ -205,7 +205,7 @@ function filterReports(status, btnElement) {
 
 function renderReportsList() {
   const tbody = document.getElementById('reports-table-body');
-  if (!tbody) return;
+  const cardsGrid = document.getElementById('reports-cards-grid');
 
   const searchVal = (document.getElementById('reports-search-input')?.value || '').trim().toLowerCase();
 
@@ -234,60 +234,111 @@ function renderReportsList() {
   if (document.getElementById('stat-total-findings')) document.getElementById('stat-total-findings').textContent = totalFindingsCount;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">
-          לא נמצאו דוחות תואמים. לחץ על "+ דוח חדש" כדי להתחיל בדיקה חדשה.
-        </td>
-      </tr>
-    `;
+    const emptyMsg = '<div style="text-align:center; padding:35px 20px; color:var(--text-muted); grid-column: 1 / -1;">לא נמצאו דוחות תואמים. לחץ על "+ דוח חדש" כדי להתחיל בדיקה חדשה.</div>';
+    if (cardsGrid) cardsGrid.innerHTML = emptyMsg;
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">' + emptyMsg + '</td></tr>';
     return;
   }
 
-  tbody.innerHTML = filtered.map(rep => {
-    const isCurrentActive = activeInspection && activeInspection.id === rep.id;
-    const itemsCount = rep.items ? rep.items.length : 0;
-    let totalCost = 0;
-    if (rep.items) {
-      rep.items.forEach(it => {
-        totalCost += (Number(it.price) || 0) * (Number(it.qty) || 1);
-      });
-    }
+  // 1. Render Reporto 1:1 Inspection Cards (Mobile & Desktop)
+  if (cardsGrid) {
+    cardsGrid.innerHTML = filtered.map((rep, idx) => {
+      const isCurrentActive = activeInspection && activeInspection.id === rep.id;
+      const itemsCount = rep.items ? rep.items.length : 0;
+      let totalCost = 0;
+      if (rep.items) {
+        rep.items.forEach(it => {
+          totalCost += (Number(it.price) || 0) * (Number(it.qty) || 1);
+        });
+      }
 
-    const isCompleted = rep.status === 'הושלם';
-    const statusPillHtml = isCompleted
-      ? `<span class="status-pill status-completed"><span class="status-dot"></span>הושלם</span>`
-      : `<span class="status-pill status-in-progress"><span class="status-dot"></span>בעבודה</span>`;
+      const isCompleted = rep.status === 'הושלם';
+      const statusPillHtml = isCompleted
+        ? '<span class="status-pill status-completed"><span class="status-dot"></span>הושלם</span>'
+        : '<span class="status-pill status-in-progress"><span class="status-dot"></span>בתהליך</span>';
 
-    return `
-      <tr style="${isCurrentActive ? 'background:#fdfaf3;' : ''}">
-        <td>
-          <div style="font-weight:700; color:var(--primary); font-size:0.95rem;">${escapeHtml(rep.clientName || 'ללא שם לקוח')}</div>
-          <div style="font-size:0.8rem; color:var(--text-muted);">${escapeHtml(rep.address || 'ללא כתובת')}</div>
-        </td>
-        <td style="font-size:0.82rem; color:#475569;">
-          ${escapeHtml(rep.propertyType || 'בדק בית')}
-        </td>
-        <td>${statusPillHtml}</td>
-        <td style="font-weight:700;">${itemsCount} ליקויים</td>
-        <td style="font-weight:700; color:var(--primary);">₪${totalCost.toLocaleString('he-IL')}</td>
-        <td style="font-size:0.82rem; color:var(--text-muted);">${escapeHtml(rep.date || '')}</td>
-        <td style="text-align:left;">
-          <div style="display:inline-flex; gap:6px;">
-            <button type="button" class="btn btn-sm btn-primary" onclick="openReportInEditor('${rep.id}')" title="פתח בדיקה בעורך">
-              ✏️ ערוך
+      const reportNumber = rep.reportNumber || ('#' + (1005 - idx));
+
+      return `
+        <div class="reporto-card ${isCurrentActive ? 'active-border' : ''}">
+          <div class="reporto-card-top">
+            <div class="reporto-card-num">${reportNumber}</div>
+            <div class="reporto-card-date">📅 ${escapeHtml(rep.date || '')}</div>
+            <div>${statusPillHtml}</div>
+          </div>
+
+          <div class="reporto-card-address">
+            📍 ${escapeHtml(rep.address || 'ללא כתובת')}
+          </div>
+
+          <div class="reporto-card-meta">
+            <span>👤 <b>${escapeHtml(rep.clientName || 'שמעון מאיר כהן קדוש')}</b></span>
+            <span>👷 צדוק צוריאל</span>
+            <span class="reporto-type-tag">🏷️ ${escapeHtml(rep.propertyType || 'בדק בית דירתי')}</span>
+          </div>
+
+          <div class="reporto-metrics-strip">
+            <div class="reporto-metric-item">🔍 <b>${itemsCount} ליקויים</b></div>
+            <div class="reporto-metric-cost">₪${totalCost.toLocaleString('he-IL')} אומדן</div>
+          </div>
+
+          <div class="reporto-card-actions">
+            <button type="button" class="btn btn-primary" onclick="openReportInEditor('${rep.id}')">
+              <span>✏️ ערוך בדיקה</span>
             </button>
-            <button type="button" class="btn btn-sm btn-gold" onclick="openReportInPreview('${rep.id}')" title="צפה והפק דוח PDF">
-              📄 דוח
+            <button type="button" class="btn btn-gold" onclick="openReportInPreview('${rep.id}')">
+              <span>📄 הפק דוח</span>
             </button>
-            <button type="button" class="btn btn-sm btn-outline" style="color:var(--danger);" onclick="deleteReport('${rep.id}')" title="מחק דוח">
+            <button type="button" class="btn btn-outline" style="color:var(--danger); width:44px; flex:none;" onclick="deleteReport('${rep.id}')" title="מחק דוח">
               🗑️
             </button>
           </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 2. Render Table View for desktop toggle
+  if (tbody) {
+    tbody.innerHTML = filtered.map(rep => {
+      const isCurrentActive = activeInspection && activeInspection.id === rep.id;
+      const itemsCount = rep.items ? rep.items.length : 0;
+      let totalCost = 0;
+      if (rep.items) {
+        rep.items.forEach(it => {
+          totalCost += (Number(it.price) || 0) * (Number(it.qty) || 1);
+        });
+      }
+
+      const isCompleted = rep.status === 'הושלם';
+      const statusPillHtml = isCompleted
+        ? '<span class="status-pill status-completed"><span class="status-dot"></span>הושלם</span>'
+        : '<span class="status-pill status-in-progress"><span class="status-dot"></span>בתהליך</span>';
+
+      return `
+        <tr style="${isCurrentActive ? 'background:#fdfaf3;' : ''}">
+          <td>
+            <div style="font-weight:700; color:var(--primary); font-size:0.95rem;">${escapeHtml(rep.clientName || 'ללא שם לקוח')}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">📍 ${escapeHtml(rep.address || 'ללא כתובת')}</div>
+          </td>
+          <td style="font-size:0.82rem; color:#475569;">
+            ${escapeHtml(rep.propertyType || 'בדק בית')}
+          </td>
+          <td>${statusPillHtml}</td>
+          <td style="font-weight:700;">${itemsCount} ליקויים</td>
+          <td style="font-weight:700; color:var(--primary);">₪${totalCost.toLocaleString('he-IL')}</td>
+          <td style="font-size:0.82rem; color:var(--text-muted);">${escapeHtml(rep.date || '')}</td>
+          <td style="text-align:left;">
+            <div style="display:inline-flex; gap:6px;">
+              <button type="button" class="btn btn-sm btn-primary" onclick="openReportInEditor('${rep.id}')">✏️ ערוך</button>
+              <button type="button" class="btn btn-sm btn-gold" onclick="openReportInPreview('${rep.id}')">📄 דוח</button>
+              <button type="button" class="btn btn-sm btn-outline" style="color:var(--danger);" onclick="deleteReport('${rep.id}')">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
 }
 
 function openReportInEditor(reportId) {
