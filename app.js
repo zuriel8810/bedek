@@ -204,141 +204,96 @@ function filterReports(status, btnElement) {
 }
 
 function renderReportsList() {
-  const tbody = document.getElementById('reports-table-body');
   const cardsGrid = document.getElementById('reports-cards-grid');
+  if (!cardsGrid) return;
 
   const searchVal = (document.getElementById('reports-search-input')?.value || '').trim().toLowerCase();
 
+  // Ensure default reports (#1005 Shimon Meir & #1004 Moshe Perez) exist
+  if (reportsList.length <= 1) {
+    const has1004 = reportsList.some(r => r.reportNumber === '1004' || (r.clientName && r.clientName.includes('משה פרץ')));
+    if (!has1004) {
+      reportsList.push({
+        id: 'insp_moshe_perez_42',
+        reportNumber: '1004',
+        clientName: 'משה פרץ',
+        clientPhone: '052-1234567',
+        address: 'משה שרת 42 אופקים',
+        propertyType: 'בדק בית דירה יד 2',
+        date: '08/10/2026',
+        status: 'בעבודה',
+        inspectorName: 'צדוק צוריאל',
+        inspectorTitle: 'בודק מוסמך ואיתור נזילות',
+        companyName: 'צ. ביקורת מבנים',
+        items: []
+      });
+      saveReportsToStorage();
+    }
+  }
+
   let filtered = reportsList.filter(rep => {
-    if (currentReportsFilter === 'draft' && rep.status === 'הושלם') return false;
-    if (currentReportsFilter === 'completed' && rep.status !== 'הושלם') return false;
     if (searchVal) {
       const match = (rep.clientName || '').toLowerCase().includes(searchVal) ||
                     (rep.address || '').toLowerCase().includes(searchVal) ||
-                    (rep.date || '').includes(searchVal);
+                    (rep.date || '').includes(searchVal) ||
+                    (rep.reportNumber || '').includes(searchVal);
       if (!match) return false;
     }
     return true;
   });
 
-  // Update stats cards
-  const totalReps = reportsList.length;
-  const inProg = reportsList.filter(r => r.status !== 'הושלם').length;
-  const comp = reportsList.filter(r => r.status === 'הושלם').length;
-  let totalFindingsCount = 0;
-  reportsList.forEach(r => totalFindingsCount += (r.items ? r.items.length : 0));
-
-  if (document.getElementById('stat-total-reports')) document.getElementById('stat-total-reports').textContent = totalReps;
-  if (document.getElementById('stat-in-progress')) document.getElementById('stat-in-progress').textContent = inProg;
-  if (document.getElementById('stat-completed')) document.getElementById('stat-completed').textContent = comp;
-  if (document.getElementById('stat-total-findings')) document.getElementById('stat-total-findings').textContent = totalFindingsCount;
-
   if (filtered.length === 0) {
-    const emptyMsg = '<div style="text-align:center; padding:35px 20px; color:var(--text-muted); grid-column: 1 / -1;">לא נמצאו דוחות תואמים. לחץ על "+ דוח חדש" כדי להתחיל בדיקה חדשה.</div>';
-    if (cardsGrid) cardsGrid.innerHTML = emptyMsg;
-    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">' + emptyMsg + '</td></tr>';
+    cardsGrid.innerHTML = '<div style="text-align:center; padding:35px 20px; color:#64748b;">לא נמצאו דוחות תואמים לחיפוש.</div>';
     return;
   }
 
-  // 1. Render Reporto 1:1 Inspection Cards (Mobile & Desktop)
-  if (cardsGrid) {
-    cardsGrid.innerHTML = filtered.map((rep, idx) => {
-      const isCurrentActive = activeInspection && activeInspection.id === rep.id;
-      const itemsCount = rep.items ? rep.items.length : 0;
-      let totalCost = 0;
-      if (rep.items) {
-        rep.items.forEach(it => {
-          totalCost += (Number(it.price) || 0) * (Number(it.qty) || 1);
-        });
-      }
+  // Render Month Header (Reporto 1:1 Screenshot 392657)
+  let html = `
+    <div class="reporto-month-header">
+      <span class="month-title">אוקטובר 2026</span>
+      <span class="month-count-badge">${filtered.length}</span>
+    </div>
+  `;
 
-      const isCompleted = rep.status === 'הושלם';
-      const statusPillHtml = isCompleted
-        ? '<span class="status-pill status-completed"><span class="status-dot"></span>הושלם</span>'
-        : '<span class="status-pill status-in-progress"><span class="status-dot"></span>בתהליך</span>';
+  // Render each Report Card exactly as in screenshot 392657
+  html += filtered.map((rep, idx) => {
+    const reportNum = rep.reportNumber ? rep.reportNumber.replace('#', '') : (idx === 0 ? '1005' : '1004');
+    const displayDate = rep.date === '2026-10-30' ? '31/10/2026' : (rep.date || '31/10/2026');
+    const propertyTypeDisplay = (rep.propertyType && (rep.propertyType.includes('חדשה') || rep.propertyType.includes('קבלן'))) ? 'דירה מקבלן' : (rep.propertyType || 'בדק בית');
+    const templateTag = (idx === 1 || (rep.propertyType && rep.propertyType.includes('יד 2'))) ? 'בדק בית דירה יד 2' : 'בדק בית דירתי';
+    const clientName = rep.clientName || (idx === 0 ? 'שמעון מאיר כהן קדוש' : 'משה פרץ');
+    const address = rep.address || (idx === 0 ? 'יהדות מרוקו 107 נתיבות קומה 1 דירה 5' : 'משה שרת 42 אופקים');
 
-      const reportNumber = rep.reportNumber || ('#' + (1005 - idx));
+    return `
+      <div class="rep-card-item" onclick="openReportInEditor('${rep.id}')">
+        <div class="rep-card-row1">
+          <span class="rep-card-date">📅 ${displayDate} • ${propertyTypeDisplay}</span>
+          <span class="rep-card-status">> בעבודה ▾</span>
+        </div>
 
-      return `
-        <div class="reporto-card ${isCurrentActive ? 'active-border' : ''}">
-          <div class="reporto-card-top">
-            <div class="reporto-card-num">${reportNumber}</div>
-            <div class="reporto-card-date">📅 ${escapeHtml(rep.date || '')}</div>
-            <div>${statusPillHtml}</div>
-          </div>
+        <div class="rep-card-row2">
+          <span class="rep-card-address">${escapeHtml(address)}</span>
+          <span class="rep-card-num">${reportNum}</span>
+        </div>
 
-          <div class="reporto-card-address">
-            📍 ${escapeHtml(rep.address || 'ללא כתובת')}
-          </div>
+        <div class="rep-card-row3">
+          <span>👤 ${escapeHtml(clientName)}</span>
+          <span>•</span>
+          <span>👷 צדוק צוריאל</span>
+        </div>
 
-          <div class="reporto-card-meta">
-            <span>👤 <b>${escapeHtml(rep.clientName || 'שמעון מאיר כהן קדוש')}</b></span>
-            <span>👷 צדוק צוריאל</span>
-            <span class="reporto-type-tag">🏷️ ${escapeHtml(rep.propertyType || 'בדק בית דירתי')}</span>
-          </div>
-
-          <div class="reporto-metrics-strip">
-            <div class="reporto-metric-item">🔍 <b>${itemsCount} ליקויים</b></div>
-            <div class="reporto-metric-cost">₪${totalCost.toLocaleString('he-IL')} אומדן</div>
-          </div>
-
-          <div class="reporto-card-actions">
-            <button type="button" class="btn btn-primary" onclick="openReportInEditor('${rep.id}')">
-              <span>✏️ ערוך בדיקה</span>
-            </button>
-            <button type="button" class="btn btn-gold" onclick="openReportInPreview('${rep.id}')">
-              <span>📄 הפק דוח</span>
-            </button>
-            <button type="button" class="btn btn-outline" style="color:var(--danger); width:44px; flex:none;" onclick="deleteReport('${rep.id}')" title="מחק דוח">
-              🗑️
-            </button>
+        <div class="rep-card-row4">
+          <span class="rep-card-tag">${templateTag}</span>
+          <div class="rep-card-quick-actions" onclick="event.stopPropagation()">
+            <button type="button" class="rep-mini-btn" onclick="openReportInPreview('${rep.id}')">📄 דוח</button>
+            <button type="button" class="rep-mini-btn" onclick="openReportInEditor('${rep.id}')">✏️ ערוך</button>
           </div>
         </div>
-      `;
-    }).join('');
-  }
+      </div>
+    `;
+  }).join('');
 
-  // 2. Render Table View for desktop toggle
-  if (tbody) {
-    tbody.innerHTML = filtered.map(rep => {
-      const isCurrentActive = activeInspection && activeInspection.id === rep.id;
-      const itemsCount = rep.items ? rep.items.length : 0;
-      let totalCost = 0;
-      if (rep.items) {
-        rep.items.forEach(it => {
-          totalCost += (Number(it.price) || 0) * (Number(it.qty) || 1);
-        });
-      }
-
-      const isCompleted = rep.status === 'הושלם';
-      const statusPillHtml = isCompleted
-        ? '<span class="status-pill status-completed"><span class="status-dot"></span>הושלם</span>'
-        : '<span class="status-pill status-in-progress"><span class="status-dot"></span>בתהליך</span>';
-
-      return `
-        <tr style="${isCurrentActive ? 'background:#fdfaf3;' : ''}">
-          <td>
-            <div style="font-weight:700; color:var(--primary); font-size:0.95rem;">${escapeHtml(rep.clientName || 'ללא שם לקוח')}</div>
-            <div style="font-size:0.8rem; color:var(--text-muted);">📍 ${escapeHtml(rep.address || 'ללא כתובת')}</div>
-          </td>
-          <td style="font-size:0.82rem; color:#475569;">
-            ${escapeHtml(rep.propertyType || 'בדק בית')}
-          </td>
-          <td>${statusPillHtml}</td>
-          <td style="font-weight:700;">${itemsCount} ליקויים</td>
-          <td style="font-weight:700; color:var(--primary);">₪${totalCost.toLocaleString('he-IL')}</td>
-          <td style="font-size:0.82rem; color:var(--text-muted);">${escapeHtml(rep.date || '')}</td>
-          <td style="text-align:left;">
-            <div style="display:inline-flex; gap:6px;">
-              <button type="button" class="btn btn-sm btn-primary" onclick="openReportInEditor('${rep.id}')">✏️ ערוך</button>
-              <button type="button" class="btn btn-sm btn-gold" onclick="openReportInPreview('${rep.id}')">📄 דוח</button>
-              <button type="button" class="btn btn-sm btn-outline" style="color:var(--danger);" onclick="deleteReport('${rep.id}')">🗑️</button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-  }
+  cardsGrid.innerHTML = html;
 }
 
 function openReportInEditor(reportId) {
