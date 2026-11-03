@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="בדק בית">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=120">
+  <link rel="stylesheet" href="style.css?v=130">
 </head>
 <body>
 
@@ -355,6 +355,11 @@
     <div class="modal-sheet">
       <div class="modal-header">
         <h3 id="edit-modal-title">עריכת ממצא</h3>
+
+      <button type="button" class="btn-ai-defect-detect" onclick="triggerAiDefectRecognition()">
+        <span>🤖</span>
+        <span>זיהוי ליקוי ותקן בבינה מלאכותית (צילום מהשטח)</span>
+      </button>
         <button type="button" class="close-btn" onclick="closeEditModal()">✕</button>
       </div>
 
@@ -491,7 +496,7 @@
   <!-- SCRIPTS -->
   <script src="shimon_inspection.js"></script>
   <script src="findings_data.js"></script>
-  <script src="app.js?v=120"></script>
+  <script src="app.js?v=130"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

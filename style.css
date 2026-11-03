@@ -1622,3 +1622,217 @@ body {
 .btn-fab-new-report {
   display: none !important;
 }
+
+/* Report Actions Bottom Sheet 1:1 */
+.action-sheet-bottom {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  max-width: 100% !important;
+  border-radius: 20px 20px 0 0 !important;
+  padding: 20px 16px 28px 16px !important;
+  animation: slideUp 0.25s ease-out;
+  background: #ffffff !important;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.action-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.action-sheet-header h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--rep-text-main);
+  margin: 0;
+}
+
+.action-sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 480px) {
+  .action-sheet-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.action-sheet-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.action-sheet-item:hover, .action-sheet-item:active {
+  background: #ede9fe;
+  border-color: var(--rep-purple);
+}
+
+.action-icon {
+  font-size: 1.5rem;
+}
+
+.action-text {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--rep-text-main);
+  text-align: center;
+}
+
+.action-sheet-cancel {
+  width: 100%;
+  padding: 12px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #64748b;
+  cursor: pointer;
+}
+
+/* Reporto 1:1 Finding Row Item */
+.rep-finding-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #eef2f6;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.rep-finding-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.rep-finding-num {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--rep-purple);
+  min-width: 28px;
+}
+
+.rep-finding-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rep-finding-room {
+  font-size: 0.76rem;
+  color: var(--rep-text-muted);
+  font-weight: 600;
+}
+
+.rep-finding-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--rep-text-main);
+  line-height: 1.35;
+}
+
+.rep-finding-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.rep-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #475569;
+}
+
+.rep-badge-photos {
+  background: #ede9fe;
+  color: var(--rep-purple);
+  font-weight: 700;
+}
+
+.rep-finding-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rep-btn-more {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+/* Floating Add Finding Pill 1:1 */
+.btn-floating-add-finding {
+  position: fixed;
+  bottom: 74px;
+  left: 18px;
+  background: var(--rep-purple);
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  border: none;
+  font-weight: 800;
+  font-size: 0.88rem;
+  box-shadow: 0 4px 14px rgba(109, 40, 217, 0.35);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 900;
+}
+
+/* AI Vision defect recognition button */
+.btn-ai-defect-detect {
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+}
+
