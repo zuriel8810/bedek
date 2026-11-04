@@ -2393,32 +2393,157 @@ const REPORTO_STANDARD_CHAPTERS = [
   'דלתות פנים מעץ',
   'ריצוף',
   'חיפוי קרמיקה',
-  'אינסטלציה',
-  'אינסטלציה - מידות ומרחבי שימוש',
   'אינסטלציה סניטרית וניקוז',
-  'עבודות איטום וליקויי רטיבות',
+  'אינסטלציה - מידות ומרחבי שימוש',
+  'איטום ורטיבות',
   'מסגרות וממ"ד',
   'מתקני חשמל ותקשורת',
+  'מטבח',
+  'חדר מדרגות',
   'חניה ופיתוח חוץ',
+  'בטיחות ונגישות',
   'שטחים משותפים / כללי'
 ];
 
-function openAddFindingModal() {
-  pickerSelectedChapter = null;
-  pickerSelectedFinding = null;
-  pickerSelectedStandard = null;
+let currentPickerTarget = 'finding';
+let currentPickerSelection = null;
+let currentModalAttachments = [];
 
-  goToPickerStep('chapter');
-  renderPickerChapters();
+// Standard diagram definitions mapped to standard numbers and keywords
+const REPORTO_ATTACHMENT_DIAGRAMS = [
+  { keywords: ['1205', 'צנרת', 'סיפון', 'דלוחין', 'ניקוז'], title: 'תקן ישראלי 1205 - התקנת צנרת דלוחין וניקוז', file: 'standards/sink_drain_1205.jpg' },
+  { keywords: ['שרשורי', 'מתחת לכיור', 'צנרת גמישה'], title: 'תקן 1205 חלק 2 - איסור שימוש בצינור שרשורי', file: 'standards/t1205_2_corrugated_pipe.jpeg' },
+  { keywords: ['1555', 'שיפוע', 'מרפסת', 'מישק', 'אריח'], title: 'תקן ישראלי 1555 - שיפועי ריצוף ומישקים', file: 'standards/t1555_3_figure_5.jpeg' },
+  { keywords: ['חלולים', 'רווח בין אריחים', 'מישקים'], title: 'תקן 1555 חלק 3 - טבלה 3 רוחב מישקים', file: 'standards/t1555_3_table_3_hollow.jpeg' },
+  { keywords: ['חיתוך צנרת', 'חדירה באיטום'], title: 'תקן 1555 - מעברי צנרת באיטום', file: 'standards/pipe_cutting_1555.jpg' }
+];
+
+// Open Add Finding: opens form and immediately launches the Finding picker (Reporto Video 2 v2_0025)
+function openAddFindingModal() {
+  activeFindingIndex = -1;
+  document.getElementById('edit-modal-title').textContent = 'הוסף ממצא';
+  
+  // Reset form inputs
+  const chapterInput = document.getElementById('form-item-chapter');
+  if (chapterInput) chapterInput.value = (typeof activeRoom !== 'undefined' && activeRoom !== 'כללי') ? activeRoom : 'אינסטלציה סניטרית וניקוז';
+  
+  document.getElementById('form-item-title').value = '';
+  document.getElementById('form-item-room').value = (typeof activeRoom !== 'undefined') ? activeRoom : '';
+  document.getElementById('form-item-std').value = '';
+  document.getElementById('form-item-rec').value = '';
+  document.getElementById('form-item-note').value = '';
+  document.getElementById('form-item-price').value = 450;
+  document.getElementById('form-item-qty').value = 1;
+  document.getElementById('form-item-unit').value = "קומפ'";
+  
+  currentModalPhotos = [];
+  renderModalPhotos();
+  
+  currentModalAttachments = [];
+  renderModalAttachments();
+  
+  const delBtn = document.getElementById('btn-delete-finding');
+  if (delBtn) delBtn.style.display = 'none';
+
+  // Open the Add Finding Form modal
+  const formModal = document.getElementById('modal-edit-finding');
+  if (formModal) {
+    formModal.style.display = 'flex';
+    formModal.classList.add('active');
+  }
+
+  // Open the Finding Picker sheet directly (1:1 with Reporto Video 2)
+  openPicker('finding');
+}
+
+function openEditModalForFinding(index) {
+  if (!activeInspection || !activeInspection.items || !activeInspection.items[index]) return;
+  const item = activeInspection.items[index];
+  activeFindingIndex = index;
+
+  document.getElementById('edit-modal-title').textContent = 'ערוך ממצא';
+  
+  const chInput = document.getElementById('form-item-chapter');
+  if (chInput) chInput.value = item.chapter || item.category || item.catName || 'אינסטלציה סניטרית וניקוז';
+  
+  document.getElementById('form-item-title').value = item.title || item.name || '';
+  document.getElementById('form-item-room').value = item.room || item.space || '';
+  document.getElementById('form-item-std').value = item.std || item.reporto_std || '';
+  document.getElementById('form-item-rec').value = item.rec || item.reporto_rec || '';
+  document.getElementById('form-item-note').value = item.note || '';
+  document.getElementById('form-item-price').value = item.price || 450;
+  document.getElementById('form-item-qty').value = item.qty || 1;
+  document.getElementById('form-item-unit').value = item.unit || "קומפ'";
+
+  currentModalPhotos = item.photos ? [...item.photos] : [];
+  renderModalPhotos();
+
+  currentModalAttachments = item.attachments ? [...item.attachments] : [];
+  renderModalAttachments();
+
+  const delBtn = document.getElementById('btn-delete-finding');
+  if (delBtn) delBtn.style.display = 'block';
+
+  const formModal = document.getElementById('modal-edit-finding');
+  if (formModal) {
+    formModal.style.display = 'flex';
+    formModal.classList.add('active');
+  }
+}
+
+function closeEditModal() {
+  const formModal = document.getElementById('modal-edit-finding');
+  if (formModal) {
+    formModal.style.display = 'none';
+    formModal.classList.remove('active');
+  }
+}
+
+// ---------------------------------------------------------
+// REPORTO DYNAMIC PICKER (פרק / ממצא / תקן)
+// ---------------------------------------------------------
+function openPicker(target) {
+  currentPickerTarget = target;
+  currentPickerSelection = null;
+
+  const titleEl = document.getElementById('rep-picker-current-title');
+  const searchInput = document.getElementById('rep-picker-search-input');
+  
+  if (target === 'chapter') {
+    if (titleEl) titleEl.textContent = 'פרק';
+    if (searchInput) {
+      searchInput.placeholder = 'בחר פרק...';
+      searchInput.value = '';
+    }
+  } else if (target === 'standard') {
+    if (titleEl) titleEl.textContent = 'תקן';
+    if (searchInput) {
+      searchInput.placeholder = 'הכנס תקן...';
+      searchInput.value = '';
+    }
+  } else {
+    // target === 'finding'
+    if (titleEl) titleEl.textContent = 'ממצא';
+    if (searchInput) {
+      searchInput.placeholder = 'הכנס תיאור...';
+      searchInput.value = '';
+    }
+  }
+
+  renderPickerItems('');
 
   const modal = document.getElementById('modal-select-finding');
   if (modal) {
     modal.style.display = 'flex';
     modal.classList.add('active');
   }
+
+  if (searchInput) {
+    setTimeout(() => searchInput.focus(), 150);
+  }
 }
 
-function closeSelectFindingModal() {
+function closePickerModal() {
   const modal = document.getElementById('modal-select-finding');
   if (modal) {
     modal.style.display = 'none';
@@ -2426,450 +2551,260 @@ function closeSelectFindingModal() {
   }
 }
 
-function goToPickerStep(step) {
-  const stepCh = document.getElementById('rep-step-chapter');
-  const stepF = document.getElementById('rep-step-finding');
-  const stepStd = document.getElementById('rep-step-standard');
-
-  if (stepCh) stepCh.style.display = step === 'chapter' ? 'flex' : 'none';
-  if (stepF) stepF.style.display = step === 'finding' ? 'flex' : 'none';
-  if (stepStd) stepStd.style.display = step === 'standard' ? 'flex' : 'none';
+function handlePickerSearchInput() {
+  const q = (document.getElementById('rep-picker-search-input')?.value || '').trim();
+  renderPickerItems(q);
 }
 
-function renderPickerChapters() {
-  const listEl = document.getElementById('picker-chapter-list');
+function renderPickerItems(query) {
+  const listEl = document.getElementById('rep-picker-items-list');
   if (!listEl) return;
 
-  const chapters = REPORTO_STANDARD_CHAPTERS;
-  listEl.innerHTML = chapters.map(ch => {
-    return '<div class="rep-picker-item" onclick="selectPickerChapter(\'' + escapeHtml(ch) + '\')">' + escapeHtml(ch) + '</div>';
-  }).join('');
-}
+  const q = query.toLowerCase();
 
-function filterPickerChapters() {
-  const q = (document.getElementById('picker-chapter-search')?.value || '').toLowerCase().trim();
-  const items = document.querySelectorAll('#picker-chapter-list .rep-picker-item');
-  items.forEach(it => {
-    it.style.display = it.textContent.toLowerCase().includes(q) ? 'block' : 'none';
-  });
-}
-
-function selectPickerChapter(ch) {
-  pickerSelectedChapter = ch;
-  goToPickerStep('finding');
-  renderPickerFindings(ch);
-}
-
-function submitPickerChapter() {
-  if (!pickerSelectedChapter) {
-    pickerSelectedChapter = REPORTO_STANDARD_CHAPTERS[0];
-  }
-  selectPickerChapter(pickerSelectedChapter);
-}
-
-function renderPickerFindings(ch) {
-  const listEl = document.getElementById('picker-finding-list');
-  if (!listEl) return;
-
-  let findings = [];
-  if (window.REPORTO_DB && window.REPORTO_DB.findings) {
-    const chLower = ch.toLowerCase();
-    findings = window.REPORTO_DB.findings.filter(f => {
-      const cat = (f.cat || '').toLowerCase();
-      const name = (f.name || '').toLowerCase();
-      if (chLower.includes('אינסטלציה') && (cat.includes('אינסטלציה') || name.includes('ניקוז') || name.includes('אסלה') || name.includes('דלוחין'))) return true;
-      if (chLower.includes('דלת') && (cat.includes('דלת') || name.includes('דלת') || name.includes('משקוף') || name.includes('מנעול'))) return true;
-      if (chLower.includes('אלומיניום') && (cat.includes('אלומיניום') || name.includes('חלון') || name.includes('תריס') || name.includes('זכוכית'))) return true;
-      if (chLower.includes('טיח') && (cat.includes('טיח') || name.includes('טיח') || name.includes('צבע') || name.includes('סדק'))) return true;
-      if (chLower.includes('ריצוף') && (cat.includes('ריצוף') || name.includes('ריצוף') || name.includes('אריח') || name.includes('פוגה'))) return true;
-      if (chLower.includes('איטום') && (cat.includes('איטום') || name.includes('רטיבות') || name.includes('איטום') || name.includes('סימני מים'))) return true;
-      if (chLower.includes('ממ"ד') && (cat.includes('ממ"ד') || name.includes('ממ"ד') || name.includes('אטימות') || name.includes('מסגרות'))) return true;
-      if (chLower.includes('חניה') && (cat.includes('חניה') || name.includes('חניה') || name.includes('רכב') || name.includes('אבן שפה'))) return true;
-      return cat.includes(chLower) || name.includes(chLower);
+  if (currentPickerTarget === 'chapter') {
+    let chapters = REPORTO_STANDARD_CHAPTERS;
+    if (q) {
+      chapters = chapters.filter(c => c.toLowerCase().includes(q));
+    }
+    listEl.innerHTML = chapters.map(ch => {
+      return '<div class="rep-picker-item" onclick="selectPickerItem(' + JSON.stringify(ch).replace(/"/g, '&quot;') + ')">' + escapeHtml(ch) + '</div>';
+    }).join('');
+  } else if (currentPickerTarget === 'standard') {
+    // Extract unique standards from indexed findings
+    const stdMap = new Map();
+    indexedFindings.forEach(f => {
+      if (f.std && f.std.trim().length > 5) {
+        const key = f.std.trim().split('\n')[0].substring(0, 70);
+        if (!stdMap.has(key)) {
+          stdMap.set(key, f);
+        }
+      }
     });
-  }
 
-  if (findings.length === 0 && window.REPORTO_DB && window.REPORTO_DB.findings) {
-    findings = window.REPORTO_DB.findings.slice(0, 30);
-  }
+    let items = Array.from(stdMap.values());
+    if (q) {
+      items = items.filter(f => (f.std + ' ' + f.name).toLowerCase().includes(q));
+    }
 
-  listEl.innerHTML = findings.slice(0, 50).map((f, i) => {
-    const cleanName = (f.name || '').split('\n')[0];
-    return '<div class="rep-picker-item" onclick="selectPickerFindingIndex(' + i + ')">' + escapeHtml(cleanName) + '</div>';
-  }).join('');
-
-  window._currentPickerFindings = findings;
-}
-
-function filterPickerFindings() {
-  const q = (document.getElementById('picker-finding-search')?.value || '').toLowerCase().trim();
-  const items = document.querySelectorAll('#picker-finding-list .rep-picker-item');
-  items.forEach(it => {
-    it.style.display = it.textContent.toLowerCase().includes(q) ? 'block' : 'none';
-  });
-}
-
-function selectPickerFindingIndex(i) {
-  const f = window._currentPickerFindings ? window._currentPickerFindings[i] : null;
-  if (!f) return;
-  pickerSelectedFinding = f;
-  goToPickerStep('standard');
-  renderPickerStandards(f);
-}
-
-function submitPickerFinding() {
-  if (!pickerSelectedFinding && window._currentPickerFindings && window._currentPickerFindings[0]) {
-    selectPickerFindingIndex(0);
-  } else if (pickerSelectedFinding) {
-    goToPickerStep('standard');
-    renderPickerStandards(pickerSelectedFinding);
-  }
-}
-
-function renderPickerStandards(f) {
-  const listEl = document.getElementById('picker-standard-list');
-  if (!listEl) return;
-
-  let stds = [];
-  if (f.std) {
-    stds = f.std.split('\n').filter(s => s.trim().length > 0);
-  }
-  if (stds.length === 0) {
-    stds = [
-      '[תקן ישראלי 1205] דרישות זרימה חופשית ואיסור הצטברות מים',
-      '[תקן ישראלי 1555] אריחי ריצוף וחיפוי פנים ומישקי הפרדה',
-      '[תקנות התכנון והבנייה] תכן הבנייה (תברואה) והוראות למתקני תברואה (הל"ת)',
-      '[תקן ישראלי 5044] דלתות כניסה ונעילה בטיחותית'
-    ];
-  }
-
-  listEl.innerHTML = stds.map((s, idx) => {
-    return '<div class="rep-picker-item" onclick="selectPickerStandardText(\'' + escapeHtml(s) + '\')">' + escapeHtml(s) + '</div>';
-  }).join('');
-}
-
-function filterPickerStandards() {
-  const q = (document.getElementById('picker-standard-search')?.value || '').toLowerCase().trim();
-  const items = document.querySelectorAll('#picker-standard-list .rep-picker-item');
-  items.forEach(it => {
-    it.style.display = it.textContent.toLowerCase().includes(q) ? 'block' : 'none';
-  });
-}
-
-function selectPickerStandardText(std) {
-  pickerSelectedStandard = std;
-  finishPickerSelection();
-}
-
-function submitPickerStandard() {
-  if (!pickerSelectedStandard && pickerSelectedFinding) {
-    pickerSelectedStandard = pickerSelectedFinding.std || '[תקן ישראלי רשמי]';
-  }
-  finishPickerSelection();
-}
-
-function finishPickerSelection() {
-  closeSelectFindingModal();
-
-  if (!pickerSelectedFinding) return;
-
-  activeFindingIndex = -1; // new item
-  document.getElementById('edit-modal-title').textContent = 'ערוך ממצא';
-  document.getElementById('form-item-title').value = pickerSelectedFinding.name || '';
-  document.getElementById('form-item-std').value = pickerSelectedStandard || pickerSelectedFinding.std || '';
-  document.getElementById('form-item-rec').value = pickerSelectedFinding.rec || 'פירוק והתקנה מחדש בהתאם להוראות התקן והיצרן';
-  document.getElementById('form-item-note').value = 'פרק: ' + (pickerSelectedChapter || 'כללי');
-  document.getElementById('form-item-price').value = pickerSelectedFinding.price || 450;
-  document.getElementById('form-item-qty').value = 1;
-  document.getElementById('form-item-unit').value = "יח'";
-
-  calculateModalTotal();
-
-  currentModalPhotos = [];
-  renderModalPhotos();
-
-  const editModal = document.getElementById('modal-edit-finding');
-  if (editModal) {
-    editModal.style.display = 'flex';
-    editModal.classList.add('active');
-  }
-}
-
-// ========================================================
-// REPORTO 1:1 SETS (ליקוי X = תקן Y = נספחים Z) & DIRECT SEARCH
-// ========================================================
-
-let currentModalAttachments = [];
-let pickerCurrentMode = 'chapters';
-
-function switchPickerMode(mode) {
-  pickerCurrentMode = mode;
-  document.getElementById('mode-btn-chapters')?.classList.toggle('active', mode === 'chapters');
-  document.getElementById('mode-btn-findings')?.classList.toggle('active', mode === 'findings');
-  document.getElementById('mode-btn-standards')?.classList.toggle('active', mode === 'standards');
-
-  const directView = document.getElementById('rep-direct-search-view');
-  const stepCh = document.getElementById('rep-step-chapter');
-  const stepF = document.getElementById('rep-step-finding');
-  const stepStd = document.getElementById('rep-step-standard');
-
-  if (mode === 'chapters') {
-    if (directView) directView.style.display = 'none';
-    goToPickerStep('chapter');
-    renderPickerChapters();
+    listEl.innerHTML = items.slice(0, 100).map(f => {
+      const title = f.std.split('\n')[0];
+      return '<div class="rep-picker-item" onclick="selectPickerItem(' + JSON.stringify(f).replace(/"/g, '&quot;') + ')">' +
+        '<div style="font-weight:700; color:#7c3aed;">' + escapeHtml(title) + '</div>' +
+        '<div style="font-size:0.8rem; color:#64748b; margin-top:3px;">' + escapeHtml(f.name.substring(0, 80)) + '...</div>' +
+        '</div>';
+    }).join('');
   } else {
-    if (stepCh) stepCh.style.display = 'none';
-    if (stepF) stepF.style.display = 'none';
-    if (stepStd) stepStd.style.display = 'none';
-    if (directView) directView.style.display = 'flex';
+    // target === 'finding'
+    let items = indexedFindings;
+    const currentChapter = document.getElementById('form-item-chapter')?.value;
 
-    const titleEl = document.getElementById('direct-search-title');
-    const inputEl = document.getElementById('direct-search-input');
-
-    if (mode === 'findings') {
-      if (titleEl) titleEl.textContent = 'חיפוש ישיר בכל 1,532 הממצאים';
-      if (inputEl) {
-        inputEl.placeholder = 'הקלד לחיפוש (למשל: אסלה, ניקוז, שיפוע, דלת, סדק)...';
-        inputEl.value = '';
-        inputEl.focus();
-      }
-      renderDirectFindingsList('');
-    } else if (mode === 'standards') {
-      if (titleEl) titleEl.textContent = 'חיפוש ישיר בתקנים ישראליים';
-      if (inputEl) {
-        inputEl.placeholder = 'הקלד תקן (למשל: 1205, 1555, 5044, חשמל, הל"ת)...';
-        inputEl.value = '';
-        inputEl.focus();
-      }
-      renderDirectStandardsList('');
+    if (q) {
+      items = items.filter(f => f.searchText.includes(q));
+    } else if (currentChapter) {
+      // Prioritize findings matching current chapter
+      const match = items.filter(f => f.catName.includes(currentChapter) || currentChapter.includes(f.catName));
+      const rest = items.filter(f => !f.catName.includes(currentChapter) && !currentChapter.includes(f.catName));
+      items = [...match, ...rest];
     }
+
+    listEl.innerHTML = items.slice(0, 100).map(f => {
+      return '<div class="rep-picker-item" onclick="selectPickerItem(' + JSON.stringify(f).replace(/"/g, '&quot;') + ')">' +
+        '<div>' + escapeHtml(f.name) + '</div>' +
+        '<div style="font-size:0.75rem; color:#7c3aed; margin-top:4px; font-weight:600;">' +
+          escapeHtml(f.catName || 'כללי') + (f.std ? ' • ' + escapeHtml(f.std.split('\n')[0].substring(0, 45)) : '') +
+        '</div>' +
+        '</div>';
+    }).join('');
   }
 }
 
-function handleDirectSearchInput() {
-  const q = (document.getElementById('direct-search-input')?.value || '').toLowerCase().trim();
-  if (pickerCurrentMode === 'findings') {
-    renderDirectFindingsList(q);
-  } else if (pickerCurrentMode === 'standards') {
-    renderDirectStandardsList(q);
-  }
+function selectPickerItem(item) {
+  currentPickerSelection = item;
+  submitPickerSelection();
 }
 
-function renderDirectFindingsList(query) {
-  const container = document.getElementById('direct-search-results-list');
-  if (!container) return;
-
-  const allFindings = (window.REPORTO_DB && window.REPORTO_DB.findings) ? window.REPORTO_DB.findings : [];
-  let filtered = allFindings;
-
-  if (query) {
-    filtered = allFindings.filter(f => {
-      const name = (f.name || '').toLowerCase();
-      const std = (f.std || '').toLowerCase();
-      const cat = (f.cat || '').toLowerCase();
-      return name.includes(query) || std.includes(query) || cat.includes(query);
-    });
-  }
-
-  if (filtered.length === 0) {
-    container.innerHTML = '<div style="padding:20px; text-align:center; color:#64748b;">לא נמצאו ממצאים מתאימים לחיפוש.</div>';
+function submitPickerSelection() {
+  if (!currentPickerSelection) {
+    closePickerModal();
     return;
   }
 
-  container.innerHTML = filtered.slice(0, 40).map((f, idx) => {
-    const cleanTitle = (f.name || '').split('\n')[0];
-    const stdSummary = (f.std || '').split('\n')[0].slice(0, 60);
-    return '<div class="rep-picker-item" onclick="selectDirectFindingByIndex(' + idx + ')">' +
-      '<div style="font-weight:700; color:#0f172a; margin-bottom:2px;">' + escapeHtml(cleanTitle) + '</div>' +
-      (stdSummary ? '<div style="font-size:0.75rem; color:#7c3aed;">' + escapeHtml(stdSummary) + '...</div>' : '') +
-    '</div>';
-  }).join('');
+  if (currentPickerTarget === 'chapter') {
+    const ch = typeof currentPickerSelection === 'string' ? currentPickerSelection : (currentPickerSelection.name || currentPickerSelection);
+    const input = document.getElementById('form-item-chapter');
+    if (input) input.value = ch;
+  } else {
+    // Either finding or standard chosen -> POPULATE ENTIRE SET AUTOMATICALLY!
+    const f = currentPickerSelection;
 
-  window._directFilteredFindings = filtered;
+    // 1. Title / description
+    document.getElementById('form-item-title').value = f.name || '';
+    
+    // 2. Chapter
+    if (f.catName) {
+      document.getElementById('form-item-chapter').value = f.catName;
+    }
+
+    // 3. Standard
+    document.getElementById('form-item-std').value = f.std || '';
+
+    // 4. Recommendation
+    document.getElementById('form-item-rec').value = f.rec || 'נדרש לבצע תיקון יסודי על ידי בעל מקצוע מוסמך בהתאם לתקן.';
+
+    // 5. Note
+    document.getElementById('form-item-note').value = f.note || '';
+
+    // 6. Pricing fields
+    document.getElementById('form-item-price').value = f.up || 450;
+    document.getElementById('form-item-qty').value = f.uq || 1;
+    document.getElementById('form-item-unit').value = f.ut || "קומפ'";
+
+    // 7. Auto-attach standard diagrams to נספחים
+    autoAttachStandardDiagrams(f.std || '', f.name || '');
+  }
+
+  closePickerModal();
 }
 
-function selectDirectFindingByIndex(idx) {
-  const f = window._directFilteredFindings ? window._directFilteredFindings[idx] : null;
-  if (!f) return;
-  applyFindingSet(f, f.std);
-}
-
-function renderDirectStandardsList(query) {
-  const container = document.getElementById('direct-search-results-list');
-  if (!container) return;
-
-  const allFindings = (window.REPORTO_DB && window.REPORTO_DB.findings) ? window.REPORTO_DB.findings : [];
-  const stdMap = new Map();
-
-  allFindings.forEach(f => {
-    if (f.std && f.std.trim().length > 5) {
-      const firstLine = f.std.split('\n')[0].trim();
-      if (!stdMap.has(firstLine)) {
-        stdMap.set(firstLine, f);
+// ---------------------------------------------------------
+// AUTO-ATTACH STANDARD DIAGRAMS (חיבור סטים מלא)
+// ---------------------------------------------------------
+function autoAttachStandardDiagrams(stdText, findingName) {
+  const combined = (stdText + ' ' + findingName).toLowerCase();
+  
+  REPORTO_ATTACHMENT_DIAGRAMS.forEach(diagram => {
+    const hasMatch = diagram.keywords.some(kw => combined.includes(kw.toLowerCase()));
+    if (hasMatch) {
+      // Check if already in currentModalAttachments
+      const exists = currentModalAttachments.some(att => att.url === diagram.file || att.name === diagram.title);
+      if (!exists) {
+        currentModalAttachments.push({
+          name: diagram.title,
+          url: diagram.file,
+          isStandardDiagram: true
+        });
       }
     }
   });
 
-  let stdList = Array.from(stdMap.entries());
-  if (query) {
-    stdList = stdList.filter(([stdLine]) => stdLine.toLowerCase().includes(query));
-  }
-
-  if (stdList.length === 0) {
-    container.innerHTML = '<div style="padding:20px; text-align:center; color:#64748b;">לא נמצאו תקנים מתאימים לחיפוש.</div>';
-    return;
-  }
-
-  container.innerHTML = stdList.slice(0, 40).map(([stdLine, f], idx) => {
-    return '<div class="rep-picker-item" onclick="selectDirectStandardByIndex(' + idx + ')">' +
-      '<div style="font-weight:700; color:#7c3aed; margin-bottom:2px;">' + escapeHtml(stdLine) + '</div>' +
-      '<div style="font-size:0.75rem; color:#64748b;">ליקוי מקושר: ' + escapeHtml((f.name || '').slice(0, 50)) + '...</div>' +
-    '</div>';
-  }).join('');
-
-  window._directFilteredStandards = stdList;
-}
-
-function selectDirectStandardByIndex(idx) {
-  const item = window._directFilteredStandards ? window._directFilteredStandards[idx] : null;
-  if (!item) return;
-  const [stdLine, f] = item;
-  applyFindingSet(f, f.std);
-}
-
-// SMART ATTACHMENT MATCHER (סטים: ליקוי = תקן = נספחים)
-function getMatchingStandardsAttachments(findingName, standardText) {
-  const text = ((findingName || '') + ' ' + (standardText || '')).toLowerCase();
-  const attachments = [];
-
-  if (text.includes('1205') || text.includes('ניקוז') || text.includes('דלוחין') || text.includes('סיפון') || text.includes('צנרת')) {
-    attachments.push({
-      url: 'standards/sink_drain_1205.jpg',
-      title: 'תרשים תקן 1205 - ניקוז ודלוחין',
-      standard: '[תקן ישראלי 1205 חלק 2]'
-    });
-    attachments.push({
-      url: 'standards/pipe_standard_1205.jpg',
-      title: 'תקן 1205 - התקנת צנרת ביוב ומרווחים',
-      standard: '[תקן ישראלי 1205 חלק 3]'
-    });
-  }
-
-  if (text.includes('שרשורי') || text.includes('צינור גמיש')) {
-    attachments.push({
-      url: 'standards/corrugated_sink_attachment.jpeg',
-      title: 'ת"י 1205 חלק 2 - איסור חיבור שרשורי בכיורים',
-      standard: '[תקן 1205 חלק 2]'
-    });
-  }
-
-  if (text.includes('1555') || text.includes('שיפוע') || text.includes('מרפסת') || text.includes('רטיבות') || text.includes('איטום')) {
-    attachments.push({
-      url: 'standards/t1555_3_balcony_slope.jpeg',
-      title: 'ת"י 1555 חלק 3 - שיפועי ניקוז במרפסות ובמשטחים מרוצפים',
-      standard: '[תקן ישראלי 1555]'
-    });
-  }
-
-  if (text.includes('ריצוף') || text.includes('אריח') || text.includes('חלול') || text.includes('פוגה') || text.includes('הדבקה')) {
-    attachments.push({
-      url: 'standards/t1555_3_sec5_2_hollow.jpeg',
-      title: 'ת"י 1555 חלק 3 - בדיקת אריחים חלולים ופוגות',
-      standard: '[תקן ישראלי 1555]'
-    });
-    attachments.push({
-      url: 'standards/t1555_3_table_3_hollow.jpeg',
-      title: 'ת"י 1555 - טבלה 3: מרווחי מישקים מותרים',
-      standard: '[תקן ישראלי 1555]'
-    });
-  }
-
-  if (text.includes('כביסה') || text.includes('מכונת כביסה')) {
-    attachments.push({
-      url: 'standards/t1205_3_washing_height.png',
-      title: 'ת"י 1205 חלק 3 - גובה תקני לנקז מכונת כביסה',
-      standard: '[תקן ישראלי 1205]'
-    });
-  }
-
-  if (text.includes('דוד') || text.includes('טמפרטורה') || text.includes('מים חמים')) {
-    attachments.push({
-      url: 'standards/t1205_1_temp_limit.png',
-      title: 'ת"י 1205 חלק 1 - הגבלת טמפרטורת אספקת מים חמים',
-      standard: '[תקן ישראלי 1205]'
-    });
-  }
-
-  return attachments;
-}
-
-// APPLY COMPLETE SET: ליקוי X = תקן Y = נספחים Z
-function applyFindingSet(f, stdText) {
-  closeSelectFindingModal();
-
-  activeFindingIndex = -1; // new item
-  document.getElementById('edit-modal-title').textContent = 'ערוך ממצא';
-  document.getElementById('form-item-title').value = f.name || '';
-  document.getElementById('form-item-std').value = stdText || f.std || '';
-  document.getElementById('form-item-rec').value = f.rec || 'פירוק והתקנה מחדש בהתאם להוראות התקן והיצרן';
-  document.getElementById('form-item-note').value = f.note || ('פרק: ' + (pickerSelectedChapter || f.cat || 'כללי'));
-  document.getElementById('form-item-price').value = f.price || 450;
-  document.getElementById('form-item-qty').value = 1;
-  document.getElementById('form-item-unit').value = "קומפ'";
-
-  calculateModalTotal();
-
-  // Reset photos
-  currentModalPhotos = [];
-  renderModalPhotos();
-
-  // Auto-attach matching official standards diagrams (נספחים)
-  currentModalAttachments = getMatchingStandardsAttachments(f.name, stdText || f.std);
   renderModalAttachments();
-
-  const editModal = document.getElementById('modal-edit-finding');
-  if (editModal) {
-    editModal.style.display = 'flex';
-    editModal.classList.add('active');
-  }
 }
 
 function renderModalAttachments() {
-  const container = document.getElementById('form-attachments-grid');
-  const badge = document.getElementById('attachments-count-badge');
-  if (badge) badge.textContent = currentModalAttachments.length + ' נספחים';
-  if (!container) return;
+  const grid = document.getElementById('form-attachments-grid');
+  const countTitle = document.getElementById('rep-attachments-title');
+  if (countTitle) countTitle.textContent = 'נספחים (' + currentModalAttachments.length + ')';
 
+  if (!grid) return;
   if (currentModalAttachments.length === 0) {
-    container.innerHTML = '<div style="font-size:0.8rem; color:#94a3b8; padding:6px 0;">אין עדיין נספחים מצורפים לממצא זה.</div>';
+    grid.innerHTML = '<div style="font-size:0.8rem; color:#94a3b8; text-align:center; padding:8px;">אין נספחים מצורפים</div>';
     return;
   }
 
-  container.innerHTML = currentModalAttachments.map((att, idx) => {
-    return '<div class="rep-attachment-row">' +
-      '<button type="button" class="rep-attachment-del" onclick="deleteModalAttachment(' + idx + ')" title="הסר נספח">✕</button>' +
-      '<div class="rep-attachment-info">' +
-        '<div class="rep-attachment-title">' + escapeHtml(att.title) + '</div>' +
-        '<div class="rep-attachment-sub">' + escapeHtml(att.standard || '') + '</div>' +
+  grid.innerHTML = currentModalAttachments.map((att, idx) => {
+    return '<div style="display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px 10px; gap:8px;">' +
+      '<div style="display:flex; align-items:center; gap:8px; overflow:hidden;">' +
+        '<img src="' + escapeHtml(att.url) + '" style="width:36px; height:36px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1;">' +
+        '<div style="font-size:0.82rem; font-weight:700; color:#1e293b; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">' + escapeHtml(att.name) + '</div>' +
       '</div>' +
-      '<img src="' + att.url + '" class="rep-attachment-thumb" alt="נספח">' +
+      '<button type="button" style="background:none; border:none; color:#ef4444; font-size:1.1rem; cursor:pointer; padding:2px 6px;" onclick="removeModalAttachment(' + idx + ')">✕</button>' +
     '</div>';
   }).join('');
 }
 
-function deleteModalAttachment(idx) {
+function removeModalAttachment(idx) {
   currentModalAttachments.splice(idx, 1);
   renderModalAttachments();
 }
 
-function addManualAttachmentPrompt() {
-  const title = prompt('הזן כותרת לנספח / תרשים תקן:', '[תקן ישראלי] תרשים תקן רשמי');
-  if (title) {
-    currentModalAttachments.push({
-      url: 'standards/sink_drain_1205.jpg',
-      title: title,
-      standard: '[תקן רשמי]'
-    });
-    renderModalAttachments();
+// ---------------------------------------------------------
+// SAVE FINDING TO REPORT
+// ---------------------------------------------------------
+function saveFindingModalSubmit() {
+  if (!activeInspection) {
+    alert('אנא פתח דוח תחילה');
+    return;
   }
+
+  const title = (document.getElementById('form-item-title')?.value || '').trim();
+  if (!title) {
+    alert('נא להזין תיאור ליקוי / לבחור ממצא');
+    return;
+  }
+
+  const chapter = (document.getElementById('form-item-chapter')?.value || '').trim() || 'כללי';
+  const room = (document.getElementById('form-item-room')?.value || '').trim() || activeRoom || 'כללי';
+  const std = (document.getElementById('form-item-std')?.value || '').trim();
+  const rec = (document.getElementById('form-item-rec')?.value || '').trim();
+  const note = (document.getElementById('form-item-note')?.value || '').trim();
+  const price = parseFloat(document.getElementById('form-item-price')?.value) || 0;
+  const qty = parseFloat(document.getElementById('form-item-qty')?.value) || 1;
+  const unit = document.getElementById('form-item-unit')?.value || "קומפ'";
+
+  if (!activeInspection.items) activeInspection.items = [];
+
+  const findingData = {
+    title,
+    chapter,
+    category: chapter,
+    room,
+    space: room,
+    std,
+    reporto_std: std,
+    rec,
+    reporto_rec: rec,
+    note,
+    price,
+    qty,
+    unit,
+    photos: [...currentModalPhotos],
+    attachments: [...currentModalAttachments]
+  };
+
+  if (activeFindingIndex >= 0 && activeInspection.items[activeFindingIndex]) {
+    // Update existing
+    activeInspection.items[activeFindingIndex] = {
+      ...activeInspection.items[activeFindingIndex],
+      ...findingData
+    };
+  } else {
+    // Add new
+    activeInspection.items.push(findingData);
+  }
+
+  saveReportsToStorage();
+  closeEditModal();
+  renderInspectionFindings();
+  
+  // Show confirmation toast
+  showToast('הממצא נשמר בהצלחה בדוח!');
+}
+
+function deleteActiveFinding() {
+  if (activeFindingIndex < 0 || !activeInspection || !activeInspection.items) return;
+  if (!confirm('האם אתה בטוח שברצונך למחוק ממצא זה?')) return;
+
+  activeInspection.items.splice(activeFindingIndex, 1);
+  saveReportsToStorage();
+  closeEditModal();
+  renderInspectionFindings();
+  showToast('הממצא נמחק מהדוח');
+}
+
+function showToast(msg) {
+  let toast = document.getElementById('rep-toast-notification');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'rep-toast-notification';
+    toast.style.cssText = 'position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0f172a; color:#ffffff; padding:10px 20px; border-radius:30px; font-size:0.9rem; font-weight:700; z-index:99999; box-shadow:0 4px 12px rgba(0,0,0,0.2); transition:opacity 0.2s;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  toast.style.display = 'block';
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.style.display = 'none', 200);
+  }, 2200);
 }

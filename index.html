@@ -388,171 +388,197 @@
   <!-- ==============================================
        REPORTO 1:1 ADD FINDING FLOW (Screenshots f_144, f_146, f_150)
        ============================================== -->
-  <div id="modal-select-finding" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeSelectFindingModal()">
+    <!-- ==============================================
+       REPORTO 1:1 DYNAMIC PICKER SHEET (פרק / ממצא / תקן)
+       Frames: v2_0030 (ממצא), v2_0102 (פרק), f_150 (תקן)
+       ============================================== -->
+  <div id="modal-select-finding" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closePickerModal()">
     <div class="modal-sheet rep-picker-sheet">
       <div class="rep-picker-drag-bar"></div>
       
-      <!-- MODE SWITCHER TABS (Reporto 1:1 Direct Search) -->
-      <div class="rep-picker-modes">
-        <button type="button" class="rep-mode-btn active" id="mode-btn-chapters" onclick="switchPickerMode(chapters)">📂 לפי פרקים</button>
-        <button type="button" class="rep-mode-btn" id="mode-btn-findings" onclick="switchPickerMode(findings)">🔍 חיפוש ממצאים</button>
-        <button type="button" class="rep-mode-btn" id="mode-btn-standards" onclick="switchPickerMode(standards)">📜 חיפוש תקנים</button>
-      </div>
-
-      <!-- DIRECT SEARCH VIEW -->
-      <div id="rep-direct-search-view" class="rep-picker-step" style="display:none;">
-        <div class="rep-picker-header">
-          <button type="button" class="rep-picker-nav-btn" onclick="closeSelectFindingModal()">ביטול</button>
-          <h3 class="rep-picker-title" id="direct-search-title">חיפוש ישיר בממצאים</h3>
-        </div>
-        <div class="rep-picker-search-wrap">
-          <input type="text" id="direct-search-input" class="rep-picker-input" placeholder="הקלד שם ליקוי או תקן..." oninput="handleDirectSearchInput()">
-        </div>
-        <div class="rep-picker-list" id="direct-search-results-list">
-        </div>
+      <div class="rep-picker-header">
+        <button type="button" class="rep-picker-nav-btn" onclick="closePickerModal()">ביטול</button>
+        <h3 class="rep-picker-title" id="rep-picker-current-title">ממצא</h3>
       </div>
       
-      <!-- STEP 1: CHAPTER (פרק - f_144.jpg) -->
-      <div id="rep-step-chapter" class="rep-picker-step active">
-        <div class="rep-picker-header">
-          <button type="button" class="rep-picker-nav-btn" onclick="closeSelectFindingModal()">ביטול</button>
-          <h3 class="rep-picker-title">פרק</h3>
-        </div>
-        <div class="rep-picker-search-wrap">
-          <input type="text" id="picker-chapter-search" class="rep-picker-input" placeholder="בחר פרק..." oninput="filterPickerChapters()">
-        </div>
-        <div class="rep-picker-list" id="picker-chapter-list">
-          <!-- Rendered by JS -->
-        </div>
-        <div class="rep-picker-footer">
-          <button type="button" class="rep-picker-submit-btn" onclick="submitPickerChapter()">סיום</button>
-        </div>
+      <div class="rep-picker-search-wrap">
+        <input type="text" id="rep-picker-search-input" class="rep-picker-input" placeholder="הכנס תיאור..." oninput="handlePickerSearchInput()">
       </div>
-
-      <!-- STEP 2: FINDING (ממצא - f_146.jpg, f_148.jpg) -->
-      <div id="rep-step-finding" class="rep-picker-step" style="display:none;">
-        <div class="rep-picker-header">
-          <button type="button" class="rep-picker-nav-btn" onclick="goToPickerStep('chapter')">חזרה</button>
-          <h3 class="rep-picker-title">ממצא</h3>
-        </div>
-        <div class="rep-picker-search-wrap">
-          <input type="text" id="picker-finding-search" class="rep-picker-input" placeholder="הכנס תיאור..." oninput="filterPickerFindings()">
-        </div>
-        <div class="rep-picker-list" id="picker-finding-list">
-          <!-- Rendered by JS -->
-        </div>
-        <div class="rep-picker-footer">
-          <button type="button" class="rep-picker-submit-btn" onclick="submitPickerFinding()">סיום</button>
-        </div>
+      
+      <div class="rep-picker-list" id="rep-picker-items-list">
+        <!-- Populated dynamically by JS -->
       </div>
-
-      <!-- STEP 3: STANDARD (תקן - f_150.jpg) -->
-      <div id="rep-step-standard" class="rep-picker-step" style="display:none;">
-        <div class="rep-picker-header">
-          <button type="button" class="rep-picker-nav-btn" onclick="goToPickerStep('finding')">חזרה</button>
-          <h3 class="rep-picker-title">תקן</h3>
-        </div>
-        <div class="rep-picker-search-wrap">
-          <input type="text" id="picker-standard-search" class="rep-picker-input" placeholder="הכנס תקן..." oninput="filterPickerStandards()">
-        </div>
-        <div class="rep-picker-list" id="picker-standard-list">
-          <!-- Rendered by JS -->
-        </div>
-        <div class="rep-picker-footer">
-          <button type="button" class="rep-picker-submit-btn" onclick="submitPickerStandard()">סיום</button>
-        </div>
+      
+      <div class="rep-picker-footer">
+        <button type="button" class="rep-picker-submit-btn" onclick="submitPickerSelection()">סיום</button>
       </div>
     </div>
   </div>
 
   <!-- ==============================================
-       MODAL 3: EDIT / CUSTOM FINDING FORM
+       REPORTO 1:1 ADD / EDIT FINDING MODAL (Frame v2_0115)
        ============================================== -->
   <div id="modal-edit-finding" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeEditModal()">
-    <div class="modal-sheet">
-      <div class="modal-header">
-        <h3 id="edit-modal-title">עריכת ממצא</h3>
+    <div class="modal-sheet rep-finding-form-sheet">
+      <div class="rep-sheet-drag-bar"></div>
 
-      <button type="button" class="btn-ai-defect-detect" onclick="triggerAiDefectRecognition()">
-        <span>🤖</span>
-        <span>זיהוי ליקוי ותקן בבינה מלאכותית (צילום מהשטח)</span>
-      </button>
-        <button type="button" class="close-btn" onclick="closeEditModal()">✕</button>
+      <!-- Header: Title on Right, Close ✕ on Left -->
+      <div class="rep-form-header">
+        <h3 id="edit-modal-title" class="rep-form-title">הוסף ממצא</h3>
+        <button type="button" class="rep-form-close-btn" onclick="closeEditModal()">✕</button>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">שם / תיאור הליקוי:</label>
-        <textarea id="form-item-title" class="form-textarea" rows="2" placeholder="תיאור הליקוי באופן ברור ומדויק"></textarea>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">דרישת התקן הישראלי הרשמי (ת"י) / החוק:</label>
-        <textarea id="form-item-std" class="form-textarea" rows="2" placeholder="סעיף תקן, ציטוט הוראות הל&quot;ת או המפרט הכללי"></textarea>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">הנחיה לתיקון / אופן ביצוע התיקון:</label>
-        <textarea id="form-item-rec" class="form-textarea" rows="2" placeholder="הנחיה מקצועית להפרכת טענות קבלן וביצוע תיקון"></textarea>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">הערת בודק חופשית מהשטח:</label>
-        <input type="text" id="form-item-note" class="form-input" placeholder="למשל: נמדד מרווח של 8 מ&quot;מ, מתחת לחלון ימין">
-      </div>
-
-      <!-- Pricing fields -->
-      <div style="display:flex; gap:10px;">
-        <div class="form-group" style="flex:1;">
-          <label class="form-label">מחיר יח' (₪):</label>
-          <input type="number" id="form-item-price" class="form-input" min="0" step="50" oninput="calculateModalTotal()">
+      <!-- Form Body -->
+      <div class="rep-form-body">
+        
+        <!-- Field 1: פרק (Chapter) -->
+        <div class="rep-form-group">
+          <label class="rep-form-label">פרק</label>
+          <div class="rep-input-with-action" onclick="openPicker('chapter')">
+            <input type="text" id="form-item-chapter" class="rep-form-input rep-clickable-input" placeholder="בחר פרק..." readonly>
+            <span class="rep-input-action-icon">📂</span>
+          </div>
         </div>
-        <div class="form-group" style="flex:1;">
-          <label class="form-label">כמות:</label>
-          <input type="number" id="form-item-qty" class="form-input" min="1" step="1" value="1" oninput="calculateModalTotal()">
-        </div>
-        <div class="form-group" style="flex:1;">
-          <label class="form-label">יחידה:</label>
-          <input type="text" id="form-item-unit" class="form-input" placeholder="יח' / מ&quot;ר">
-        </div>
-        <div class="form-group" style="flex:1.2;">
-          <label class="form-label">סה"כ לתשלום:</label>
-          <input type="text" id="form-item-total" class="form-input" readonly style="font-weight:800; background:#f8fafc; color:var(--primary);">
-        </div>
-      </div>
 
-      <!-- Photos Upload -->
-      <div class="form-group">
-        <label class="form-label">צילום ותמונות מהשטח:</label>
-        <input type="file" id="form-photo-input" accept="image/*" capture="environment" multiple style="display:none;" onchange="handleFindingPhotoUpload(event)">
-        <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('form-photo-input').click()">
-          <span>📷</span>
-          <span>צלם תמונה מהשטח / העלה קובץ</span>
-        </button>
-        <div id="form-photos-grid" class="defect-photos-strip"></div>
-      </div>
-
-      <!-- Attachments Accordion (נספחים מריפורטו 1:1) -->
-      <div class="form-group" style="margin-top:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <label class="form-label" style="margin:0; font-weight:800; color:#0f172a;">נספחים ותרשימי תקן רשמיים:</label>
-          <span id="attachments-count-badge" style="font-size:0.75rem; background:#ede9fe; color:#7c3aed; padding:2px 8px; border-radius:12px; font-weight:700;">0 נספחים</span>
+        <!-- Field 2: ממצא (Finding Description) + AI Pill + Mic -->
+        <div class="rep-form-group">
+          <div class="rep-label-row">
+            <label class="rep-form-label">ממצא</label>
+            <div class="rep-label-actions">
+              <button type="button" class="rep-btn-ai-fill" onclick="triggerAiDefectRecognition()">
+                <span>מילוי עם AI</span>
+                <span class="sparkle-icon">✨</span>
+              </button>
+              <button type="button" class="rep-btn-mic" onclick="startVoiceFindingDictation()" title="הקלטה קולית מהשטח">
+                🎙️
+              </button>
+            </div>
+          </div>
+          <div class="rep-input-with-action">
+            <textarea id="form-item-title" class="rep-form-textarea" rows="2" placeholder="הכנס תיאור..."></textarea>
+            <button type="button" class="rep-input-btn" onclick="openPicker('finding')" title="חיפוש במאגר הממצאים">🔍</button>
+          </div>
         </div>
-        <div id="form-attachments-grid" class="defect-attachments-strip" style="display:flex; flex-direction:column; gap:8px;"></div>
-        <button type="button" class="btn btn-outline btn-block btn-sm" style="margin-top:8px; font-weight:700;" onclick="addManualAttachmentPrompt()">
-          <span>➕</span>
-          <span>הוסף נספח / תרשים תקן נוסף</span>
-        </button>
-      </div>
 
-      <div style="display:flex; gap:10px; margin-top:20px;">
-        <button type="button" class="btn btn-primary" style="flex:2;" onclick="saveFindingModalSubmit()">
-          <span>💾</span>
-          <span>שמור ממצא בדוח</span>
-        </button>
-        <button type="button" class="btn btn-danger" id="btn-delete-finding" style="flex:1;" onclick="deleteActiveFinding()">
-          <span>🗑️</span>
-          <span>מחק</span>
-        </button>
+        <!-- Field 3: מיקום (Location) -->
+        <div class="rep-form-group">
+          <label class="rep-form-label">מיקום</label>
+          <input type="text" id="form-item-room" class="rep-form-input" placeholder="הכנס מיקום...">
+        </div>
+
+        <!-- Field 4: המלצה (Recommendation) -->
+        <div class="rep-form-group">
+          <label class="rep-form-label">המלצה</label>
+          <textarea id="form-item-rec" class="rep-form-textarea" rows="2" placeholder="הכנס המלצה..."></textarea>
+        </div>
+
+        <!-- Field 5: הערה (Note) -->
+        <div class="rep-form-group">
+          <label class="rep-form-label">הערה</label>
+          <textarea id="form-item-note" class="rep-form-textarea" rows="2" placeholder="הכנס הערה..."></textarea>
+        </div>
+
+        <!-- Field 6: תקן (Standard) -->
+        <div class="rep-form-group">
+          <label class="rep-form-label">תקן</label>
+          <div class="rep-input-with-action">
+            <textarea id="form-item-std" class="rep-form-textarea" rows="2" placeholder="הכנס תקן..."></textarea>
+            <button type="button" class="rep-input-btn" onclick="openPicker('standard')" title="חיפוש במאגר התקנים">📜</button>
+          </div>
+        </div>
+
+        <!-- Row: מחיר ליח' (ש"ח) | כמות יח' | יחידת מידה -->
+        <div class="rep-three-col-row">
+          <div class="rep-col-group">
+            <label class="rep-form-label">מחיר ליח' (ש"ח)</label>
+            <input type="number" id="form-item-price" class="rep-form-input" placeholder="" min="0" step="50" oninput="calculateModalTotal()">
+          </div>
+          <div class="rep-col-group">
+            <label class="rep-form-label">כמות יח'</label>
+            <input type="number" id="form-item-qty" class="rep-form-input" placeholder="" min="1" step="1" value="1" oninput="calculateModalTotal()">
+          </div>
+          <div class="rep-col-group">
+            <label class="rep-form-label">יחידת מידה</label>
+            <select id="form-item-unit" class="rep-form-select">
+              <option value="קומפ'">קומפ'</option>
+              <option value="יח'">יח'</option>
+              <option value="מ'">מ'</option>
+              <option value="מ&quot;ר">מ"ר</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Section: תמונות (0) -->
+        <div class="rep-section-block">
+          <div class="rep-section-header">
+            <span id="rep-photos-title" class="rep-section-title">תמונות (0)</span>
+            <div class="rep-section-tools">
+              <span class="rep-tool-dots">⋯</span>
+              <span class="rep-tool-chevron">⌃</span>
+            </div>
+          </div>
+          <div class="rep-action-buttons-row">
+            <button type="button" class="rep-action-btn" onclick="document.getElementById('form-photo-input').click()">
+              <span>📷</span>
+              <span>צלם תמונה</span>
+            </button>
+            <button type="button" class="rep-action-btn" onclick="document.getElementById('form-photo-input').click()">
+              <span>⚡</span>
+              <span>צילום מהיר</span>
+            </button>
+            <button type="button" class="rep-action-btn" onclick="document.getElementById('form-photo-input').click()">
+              <span>🖼️</span>
+              <span>בחר מהגלריה</span>
+            </button>
+            <button type="button" class="rep-action-btn" onclick="alert('העלאת וידאו תהיה זמינה בעדכון הקרוב')">
+              <span>🎥</span>
+              <span>העלאת וידאו</span>
+            </button>
+          </div>
+          <input type="file" id="form-photo-input" accept="image/*" capture="environment" multiple style="display:none;" onchange="handleFindingPhotoUpload(event)">
+          <div id="form-photos-grid" class="defect-photos-strip"></div>
+        </div>
+
+        <!-- Section: נספחים (0) -->
+        <div class="rep-section-block">
+          <div class="rep-section-header">
+            <span id="rep-attachments-title" class="rep-section-title">נספחים (0)</span>
+            <div class="rep-section-tools">
+              <span class="rep-tool-dots">⋯</span>
+              <span class="rep-tool-chevron">⌃</span>
+            </div>
+          </div>
+          <div class="rep-action-buttons-row">
+            <button type="button" class="rep-action-btn" onclick="document.getElementById('form-photo-input').click()">
+              <span>📷</span>
+              <span>צלם תמונה</span>
+            </button>
+            <button type="button" class="rep-action-btn" onclick="document.getElementById('form-photo-input').click()">
+              <span>⚡</span>
+              <span>צילום מהיר</span>
+            </button>
+            <button type="button" class="rep-action-btn" onclick="document.getElementById('form-photo-input').click()">
+              <span>🖼️</span>
+              <span>בחר מהגלריה</span>
+            </button>
+            <button type="button" class="rep-action-btn" onclick="alert('העלאת וידאו תהיה זמינה בעדכון הקרוב')">
+              <span>🎥</span>
+              <span>העלאת וידאו</span>
+            </button>
+          </div>
+          <div id="form-attachments-grid" class="defect-attachments-strip"></div>
+        </div>
+
+        <!-- Submit Button: שמירה -->
+        <div class="rep-form-footer">
+          <button type="button" id="btn-save-finding" class="rep-btn-submit-save" onclick="saveFindingModalSubmit()">
+            שמירה
+          </button>
+          <button type="button" class="rep-btn-delete-finding" id="btn-delete-finding" style="display:none;" onclick="deleteActiveFinding()">
+            מחק ממצא
+          </button>
+        </div>
+
       </div>
     </div>
   </div>
