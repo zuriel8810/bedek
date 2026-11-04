@@ -1010,6 +1010,26 @@ function selectFindingFromRepo(findingIndex) {
   currentModalPhotos = [];
   renderModalPhotos();
 
+  currentModalAttachments = [];
+  if (finding.std_image) {
+    currentModalAttachments.push({
+      url: finding.std_image,
+      title: "תרשים תקן רשמי",
+      standard: finding.std || ""
+    });
+  } else if (finding.reporto_images && finding.reporto_images.length > 0) {
+    finding.reporto_images.forEach(img => {
+      currentModalAttachments.push({
+        url: img.url || img,
+        title: img.title || "תרשים תקן רשמי",
+        standard: finding.std || ""
+      });
+    });
+  }
+  if (typeof renderModalAttachments === 'function') {
+    renderModalAttachments();
+  }
+
   document.getElementById('btn-delete-finding').style.display = 'none';
   document.getElementById('modal-edit-finding').classList.add('active');
 }
@@ -1029,6 +1049,26 @@ function openCustomFindingModal() {
 
   currentModalPhotos = [];
   renderModalPhotos();
+
+  currentModalAttachments = [];
+  if (finding.std_image) {
+    currentModalAttachments.push({
+      url: finding.std_image,
+      title: "תרשים תקן רשמי",
+      standard: finding.std || ""
+    });
+  } else if (finding.reporto_images && finding.reporto_images.length > 0) {
+    finding.reporto_images.forEach(img => {
+      currentModalAttachments.push({
+        url: img.url || img,
+        title: img.title || "תרשים תקן רשמי",
+        standard: finding.std || ""
+      });
+    });
+  }
+  if (typeof renderModalAttachments === 'function') {
+    renderModalAttachments();
+  }
 
   document.getElementById('btn-delete-finding').style.display = 'none';
   document.getElementById('modal-edit-finding').classList.add('active');
