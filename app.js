@@ -2364,3 +2364,220 @@ function triggerAiDefectRecognition() {
   };
   input.click();
 }
+
+// ========================================================
+// REPORTO 1:1 ADD FINDING PICKER FLOW (f_144, f_146, f_150)
+// ========================================================
+
+let pickerSelectedChapter = null;
+let pickerSelectedFinding = null;
+let pickerSelectedStandard = null;
+
+const REPORTO_STANDARD_CHAPTERS = [
+  'דלת כניסה',
+  'אלומיניום',
+  'עבודות טיח וצבע',
+  'דלתות פנים מעץ',
+  'ריצוף',
+  'חיפוי קרמיקה',
+  'אינסטלציה',
+  'אינסטלציה - מידות ומרחבי שימוש',
+  'אינסטלציה סניטרית וניקוז',
+  'עבודות איטום וליקויי רטיבות',
+  'מסגרות וממ"ד',
+  'מתקני חשמל ותקשורת',
+  'חניה ופיתוח חוץ',
+  'שטחים משותפים / כללי'
+];
+
+function openAddFindingModal() {
+  pickerSelectedChapter = null;
+  pickerSelectedFinding = null;
+  pickerSelectedStandard = null;
+
+  goToPickerStep('chapter');
+  renderPickerChapters();
+
+  const modal = document.getElementById('modal-select-finding');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+  }
+}
+
+function closeSelectFindingModal() {
+  const modal = document.getElementById('modal-select-finding');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('active');
+  }
+}
+
+function goToPickerStep(step) {
+  const stepCh = document.getElementById('rep-step-chapter');
+  const stepF = document.getElementById('rep-step-finding');
+  const stepStd = document.getElementById('rep-step-standard');
+
+  if (stepCh) stepCh.style.display = step === 'chapter' ? 'flex' : 'none';
+  if (stepF) stepF.style.display = step === 'finding' ? 'flex' : 'none';
+  if (stepStd) stepStd.style.display = step === 'standard' ? 'flex' : 'none';
+}
+
+function renderPickerChapters() {
+  const listEl = document.getElementById('picker-chapter-list');
+  if (!listEl) return;
+
+  const chapters = REPORTO_STANDARD_CHAPTERS;
+  listEl.innerHTML = chapters.map(ch => {
+    return '<div class="rep-picker-item" onclick="selectPickerChapter(\'' + escapeHtml(ch) + '\')">' + escapeHtml(ch) + '</div>';
+  }).join('');
+}
+
+function filterPickerChapters() {
+  const q = (document.getElementById('picker-chapter-search')?.value || '').toLowerCase().trim();
+  const items = document.querySelectorAll('#picker-chapter-list .rep-picker-item');
+  items.forEach(it => {
+    it.style.display = it.textContent.toLowerCase().includes(q) ? 'block' : 'none';
+  });
+}
+
+function selectPickerChapter(ch) {
+  pickerSelectedChapter = ch;
+  goToPickerStep('finding');
+  renderPickerFindings(ch);
+}
+
+function submitPickerChapter() {
+  if (!pickerSelectedChapter) {
+    pickerSelectedChapter = REPORTO_STANDARD_CHAPTERS[0];
+  }
+  selectPickerChapter(pickerSelectedChapter);
+}
+
+function renderPickerFindings(ch) {
+  const listEl = document.getElementById('picker-finding-list');
+  if (!listEl) return;
+
+  let findings = [];
+  if (window.REPORTO_DB && window.REPORTO_DB.findings) {
+    const chLower = ch.toLowerCase();
+    findings = window.REPORTO_DB.findings.filter(f => {
+      const cat = (f.cat || '').toLowerCase();
+      const name = (f.name || '').toLowerCase();
+      if (chLower.includes('אינסטלציה') && (cat.includes('אינסטלציה') || name.includes('ניקוז') || name.includes('אסלה') || name.includes('דלוחין'))) return true;
+      if (chLower.includes('דלת') && (cat.includes('דלת') || name.includes('דלת') || name.includes('משקוף') || name.includes('מנעול'))) return true;
+      if (chLower.includes('אלומיניום') && (cat.includes('אלומיניום') || name.includes('חלון') || name.includes('תריס') || name.includes('זכוכית'))) return true;
+      if (chLower.includes('טיח') && (cat.includes('טיח') || name.includes('טיח') || name.includes('צבע') || name.includes('סדק'))) return true;
+      if (chLower.includes('ריצוף') && (cat.includes('ריצוף') || name.includes('ריצוף') || name.includes('אריח') || name.includes('פוגה'))) return true;
+      if (chLower.includes('איטום') && (cat.includes('איטום') || name.includes('רטיבות') || name.includes('איטום') || name.includes('סימני מים'))) return true;
+      if (chLower.includes('ממ"ד') && (cat.includes('ממ"ד') || name.includes('ממ"ד') || name.includes('אטימות') || name.includes('מסגרות'))) return true;
+      if (chLower.includes('חניה') && (cat.includes('חניה') || name.includes('חניה') || name.includes('רכב') || name.includes('אבן שפה'))) return true;
+      return cat.includes(chLower) || name.includes(chLower);
+    });
+  }
+
+  if (findings.length === 0 && window.REPORTO_DB && window.REPORTO_DB.findings) {
+    findings = window.REPORTO_DB.findings.slice(0, 30);
+  }
+
+  listEl.innerHTML = findings.slice(0, 50).map((f, i) => {
+    const cleanName = (f.name || '').split('\n')[0];
+    return '<div class="rep-picker-item" onclick="selectPickerFindingIndex(' + i + ')">' + escapeHtml(cleanName) + '</div>';
+  }).join('');
+
+  window._currentPickerFindings = findings;
+}
+
+function filterPickerFindings() {
+  const q = (document.getElementById('picker-finding-search')?.value || '').toLowerCase().trim();
+  const items = document.querySelectorAll('#picker-finding-list .rep-picker-item');
+  items.forEach(it => {
+    it.style.display = it.textContent.toLowerCase().includes(q) ? 'block' : 'none';
+  });
+}
+
+function selectPickerFindingIndex(i) {
+  const f = window._currentPickerFindings ? window._currentPickerFindings[i] : null;
+  if (!f) return;
+  pickerSelectedFinding = f;
+  goToPickerStep('standard');
+  renderPickerStandards(f);
+}
+
+function submitPickerFinding() {
+  if (!pickerSelectedFinding && window._currentPickerFindings && window._currentPickerFindings[0]) {
+    selectPickerFindingIndex(0);
+  } else if (pickerSelectedFinding) {
+    goToPickerStep('standard');
+    renderPickerStandards(pickerSelectedFinding);
+  }
+}
+
+function renderPickerStandards(f) {
+  const listEl = document.getElementById('picker-standard-list');
+  if (!listEl) return;
+
+  let stds = [];
+  if (f.std) {
+    stds = f.std.split('\n').filter(s => s.trim().length > 0);
+  }
+  if (stds.length === 0) {
+    stds = [
+      '[תקן ישראלי 1205] דרישות זרימה חופשית ואיסור הצטברות מים',
+      '[תקן ישראלי 1555] אריחי ריצוף וחיפוי פנים ומישקי הפרדה',
+      '[תקנות התכנון והבנייה] תכן הבנייה (תברואה) והוראות למתקני תברואה (הל"ת)',
+      '[תקן ישראלי 5044] דלתות כניסה ונעילה בטיחותית'
+    ];
+  }
+
+  listEl.innerHTML = stds.map((s, idx) => {
+    return '<div class="rep-picker-item" onclick="selectPickerStandardText(\'' + escapeHtml(s) + '\')">' + escapeHtml(s) + '</div>';
+  }).join('');
+}
+
+function filterPickerStandards() {
+  const q = (document.getElementById('picker-standard-search')?.value || '').toLowerCase().trim();
+  const items = document.querySelectorAll('#picker-standard-list .rep-picker-item');
+  items.forEach(it => {
+    it.style.display = it.textContent.toLowerCase().includes(q) ? 'block' : 'none';
+  });
+}
+
+function selectPickerStandardText(std) {
+  pickerSelectedStandard = std;
+  finishPickerSelection();
+}
+
+function submitPickerStandard() {
+  if (!pickerSelectedStandard && pickerSelectedFinding) {
+    pickerSelectedStandard = pickerSelectedFinding.std || '[תקן ישראלי רשמי]';
+  }
+  finishPickerSelection();
+}
+
+function finishPickerSelection() {
+  closeSelectFindingModal();
+
+  if (!pickerSelectedFinding) return;
+
+  activeFindingIndex = -1; // new item
+  document.getElementById('edit-modal-title').textContent = 'ערוך ממצא';
+  document.getElementById('form-item-title').value = pickerSelectedFinding.name || '';
+  document.getElementById('form-item-std').value = pickerSelectedStandard || pickerSelectedFinding.std || '';
+  document.getElementById('form-item-rec').value = pickerSelectedFinding.rec || 'פירוק והתקנה מחדש בהתאם להוראות התקן והיצרן';
+  document.getElementById('form-item-note').value = 'פרק: ' + (pickerSelectedChapter || 'כללי');
+  document.getElementById('form-item-price').value = pickerSelectedFinding.price || 450;
+  document.getElementById('form-item-qty').value = 1;
+  document.getElementById('form-item-unit').value = "יח'";
+
+  calculateModalTotal();
+
+  currentModalPhotos = [];
+  renderModalPhotos();
+
+  const editModal = document.getElementById('modal-edit-finding');
+  if (editModal) {
+    editModal.style.display = 'flex';
+    editModal.classList.add('active');
+  }
+}

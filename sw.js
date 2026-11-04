@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bedek-v140';
+const CACHE_NAME = 'bedek-v150';
 const ASSETS = [
   './',
   './index.html',
