@@ -2738,3 +2738,4 @@ body {
 .rep-btn-delete-finding:hover {
   background: #fecaca;
 }
+#modal-select-finding { z-index: 2000 !important; }

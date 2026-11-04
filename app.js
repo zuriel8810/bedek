@@ -4,6 +4,7 @@
 
 // Global State
 let db = window.REPORTO_DB || { repos: [], categories: [], findings: [] };
+var indexedFindings = [];
 let reportsList = [];
 let activeInspection = null;
 let activeNavTab = 'reports';
@@ -42,7 +43,6 @@ if (document.readyState === 'loading') {
 }
 
 // Build Fast Search Indices for Findings DB
-let indexedFindings = [];
 function initDbIndex() {
   if (!db || !db.findings) return;
   indexedFindings = db.findings.map((f, idx) => {
