@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="בדק בית">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=150">
+  <link rel="stylesheet" href="style.css?v=160">
 </head>
 <body>
 
@@ -392,6 +392,26 @@
     <div class="modal-sheet rep-picker-sheet">
       <div class="rep-picker-drag-bar"></div>
       
+      <!-- MODE SWITCHER TABS (Reporto 1:1 Direct Search) -->
+      <div class="rep-picker-modes">
+        <button type="button" class="rep-mode-btn active" id="mode-btn-chapters" onclick="switchPickerMode(chapters)">📂 לפי פרקים</button>
+        <button type="button" class="rep-mode-btn" id="mode-btn-findings" onclick="switchPickerMode(findings)">🔍 חיפוש ממצאים</button>
+        <button type="button" class="rep-mode-btn" id="mode-btn-standards" onclick="switchPickerMode(standards)">📜 חיפוש תקנים</button>
+      </div>
+
+      <!-- DIRECT SEARCH VIEW -->
+      <div id="rep-direct-search-view" class="rep-picker-step" style="display:none;">
+        <div class="rep-picker-header">
+          <button type="button" class="rep-picker-nav-btn" onclick="closeSelectFindingModal()">ביטול</button>
+          <h3 class="rep-picker-title" id="direct-search-title">חיפוש ישיר בממצאים</h3>
+        </div>
+        <div class="rep-picker-search-wrap">
+          <input type="text" id="direct-search-input" class="rep-picker-input" placeholder="הקלד שם ליקוי או תקן..." oninput="handleDirectSearchInput()">
+        </div>
+        <div class="rep-picker-list" id="direct-search-results-list">
+        </div>
+      </div>
+      
       <!-- STEP 1: CHAPTER (פרק - f_144.jpg) -->
       <div id="rep-step-chapter" class="rep-picker-step active">
         <div class="rep-picker-header">
@@ -511,6 +531,19 @@
         <div id="form-photos-grid" class="defect-photos-strip"></div>
       </div>
 
+      <!-- Attachments Accordion (נספחים מריפורטו 1:1) -->
+      <div class="form-group" style="margin-top:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <label class="form-label" style="margin:0; font-weight:800; color:#0f172a;">נספחים ותרשימי תקן רשמיים:</label>
+          <span id="attachments-count-badge" style="font-size:0.75rem; background:#ede9fe; color:#7c3aed; padding:2px 8px; border-radius:12px; font-weight:700;">0 נספחים</span>
+        </div>
+        <div id="form-attachments-grid" class="defect-attachments-strip" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <button type="button" class="btn btn-outline btn-block btn-sm" style="margin-top:8px; font-weight:700;" onclick="addManualAttachmentPrompt()">
+          <span>➕</span>
+          <span>הוסף נספח / תרשים תקן נוסף</span>
+        </button>
+      </div>
+
       <div style="display:flex; gap:10px; margin-top:20px;">
         <button type="button" class="btn btn-primary" style="flex:2;" onclick="saveFindingModalSubmit()">
           <span>💾</span>
@@ -593,11 +626,11 @@
   <!-- SCRIPTS -->
   <script src="shimon_inspection.js"></script>
   <script src="findings_data.js"></script>
-  <script src="app.js?v=150"></script>
+  <script src="app.js?v=160"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=150').catch(err => console.log('SW fail:', err));
+        navigator.serviceWorker.register('sw.js?v=160').catch(err => console.log('SW fail:', err));
       });
     }
   </script>

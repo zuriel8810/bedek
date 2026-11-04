@@ -664,6 +664,19 @@ function openEditModalForFinding(index) {
 
   currentModalPhotos = item.photos ? [...item.photos] : [];
   renderModalPhotos();
+  
+  if (item.attachments && item.attachments.length > 0) {
+    currentModalAttachments = [...item.attachments];
+  } else if (item.reporto_images && item.reporto_images.length > 0) {
+    currentModalAttachments = item.reporto_images.map(img => ({
+      url: img.url || img,
+      title: img.title || "תרשים תקן מריפורטו",
+      standard: img.standard || ""
+    }));
+  } else {
+    currentModalAttachments = getMatchingStandardsAttachments(item.title || item.name, item.std || item.reporto_std);
+  }
+  renderModalAttachments();
 
   const modal = document.getElementById('modal-edit-finding');
   if (modal) {
@@ -2579,5 +2592,284 @@ function finishPickerSelection() {
   if (editModal) {
     editModal.style.display = 'flex';
     editModal.classList.add('active');
+  }
+}
+
+// ========================================================
+// REPORTO 1:1 SETS (ליקוי X = תקן Y = נספחים Z) & DIRECT SEARCH
+// ========================================================
+
+let currentModalAttachments = [];
+let pickerCurrentMode = 'chapters';
+
+function switchPickerMode(mode) {
+  pickerCurrentMode = mode;
+  document.getElementById('mode-btn-chapters')?.classList.toggle('active', mode === 'chapters');
+  document.getElementById('mode-btn-findings')?.classList.toggle('active', mode === 'findings');
+  document.getElementById('mode-btn-standards')?.classList.toggle('active', mode === 'standards');
+
+  const directView = document.getElementById('rep-direct-search-view');
+  const stepCh = document.getElementById('rep-step-chapter');
+  const stepF = document.getElementById('rep-step-finding');
+  const stepStd = document.getElementById('rep-step-standard');
+
+  if (mode === 'chapters') {
+    if (directView) directView.style.display = 'none';
+    goToPickerStep('chapter');
+    renderPickerChapters();
+  } else {
+    if (stepCh) stepCh.style.display = 'none';
+    if (stepF) stepF.style.display = 'none';
+    if (stepStd) stepStd.style.display = 'none';
+    if (directView) directView.style.display = 'flex';
+
+    const titleEl = document.getElementById('direct-search-title');
+    const inputEl = document.getElementById('direct-search-input');
+
+    if (mode === 'findings') {
+      if (titleEl) titleEl.textContent = 'חיפוש ישיר בכל 1,532 הממצאים';
+      if (inputEl) {
+        inputEl.placeholder = 'הקלד לחיפוש (למשל: אסלה, ניקוז, שיפוע, דלת, סדק)...';
+        inputEl.value = '';
+        inputEl.focus();
+      }
+      renderDirectFindingsList('');
+    } else if (mode === 'standards') {
+      if (titleEl) titleEl.textContent = 'חיפוש ישיר בתקנים ישראליים';
+      if (inputEl) {
+        inputEl.placeholder = 'הקלד תקן (למשל: 1205, 1555, 5044, חשמל, הל"ת)...';
+        inputEl.value = '';
+        inputEl.focus();
+      }
+      renderDirectStandardsList('');
+    }
+  }
+}
+
+function handleDirectSearchInput() {
+  const q = (document.getElementById('direct-search-input')?.value || '').toLowerCase().trim();
+  if (pickerCurrentMode === 'findings') {
+    renderDirectFindingsList(q);
+  } else if (pickerCurrentMode === 'standards') {
+    renderDirectStandardsList(q);
+  }
+}
+
+function renderDirectFindingsList(query) {
+  const container = document.getElementById('direct-search-results-list');
+  if (!container) return;
+
+  const allFindings = (window.REPORTO_DB && window.REPORTO_DB.findings) ? window.REPORTO_DB.findings : [];
+  let filtered = allFindings;
+
+  if (query) {
+    filtered = allFindings.filter(f => {
+      const name = (f.name || '').toLowerCase();
+      const std = (f.std || '').toLowerCase();
+      const cat = (f.cat || '').toLowerCase();
+      return name.includes(query) || std.includes(query) || cat.includes(query);
+    });
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div style="padding:20px; text-align:center; color:#64748b;">לא נמצאו ממצאים מתאימים לחיפוש.</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.slice(0, 40).map((f, idx) => {
+    const cleanTitle = (f.name || '').split('\n')[0];
+    const stdSummary = (f.std || '').split('\n')[0].slice(0, 60);
+    return '<div class="rep-picker-item" onclick="selectDirectFindingByIndex(' + idx + ')">' +
+      '<div style="font-weight:700; color:#0f172a; margin-bottom:2px;">' + escapeHtml(cleanTitle) + '</div>' +
+      (stdSummary ? '<div style="font-size:0.75rem; color:#7c3aed;">' + escapeHtml(stdSummary) + '...</div>' : '') +
+    '</div>';
+  }).join('');
+
+  window._directFilteredFindings = filtered;
+}
+
+function selectDirectFindingByIndex(idx) {
+  const f = window._directFilteredFindings ? window._directFilteredFindings[idx] : null;
+  if (!f) return;
+  applyFindingSet(f, f.std);
+}
+
+function renderDirectStandardsList(query) {
+  const container = document.getElementById('direct-search-results-list');
+  if (!container) return;
+
+  const allFindings = (window.REPORTO_DB && window.REPORTO_DB.findings) ? window.REPORTO_DB.findings : [];
+  const stdMap = new Map();
+
+  allFindings.forEach(f => {
+    if (f.std && f.std.trim().length > 5) {
+      const firstLine = f.std.split('\n')[0].trim();
+      if (!stdMap.has(firstLine)) {
+        stdMap.set(firstLine, f);
+      }
+    }
+  });
+
+  let stdList = Array.from(stdMap.entries());
+  if (query) {
+    stdList = stdList.filter(([stdLine]) => stdLine.toLowerCase().includes(query));
+  }
+
+  if (stdList.length === 0) {
+    container.innerHTML = '<div style="padding:20px; text-align:center; color:#64748b;">לא נמצאו תקנים מתאימים לחיפוש.</div>';
+    return;
+  }
+
+  container.innerHTML = stdList.slice(0, 40).map(([stdLine, f], idx) => {
+    return '<div class="rep-picker-item" onclick="selectDirectStandardByIndex(' + idx + ')">' +
+      '<div style="font-weight:700; color:#7c3aed; margin-bottom:2px;">' + escapeHtml(stdLine) + '</div>' +
+      '<div style="font-size:0.75rem; color:#64748b;">ליקוי מקושר: ' + escapeHtml((f.name || '').slice(0, 50)) + '...</div>' +
+    '</div>';
+  }).join('');
+
+  window._directFilteredStandards = stdList;
+}
+
+function selectDirectStandardByIndex(idx) {
+  const item = window._directFilteredStandards ? window._directFilteredStandards[idx] : null;
+  if (!item) return;
+  const [stdLine, f] = item;
+  applyFindingSet(f, f.std);
+}
+
+// SMART ATTACHMENT MATCHER (סטים: ליקוי = תקן = נספחים)
+function getMatchingStandardsAttachments(findingName, standardText) {
+  const text = ((findingName || '') + ' ' + (standardText || '')).toLowerCase();
+  const attachments = [];
+
+  if (text.includes('1205') || text.includes('ניקוז') || text.includes('דלוחין') || text.includes('סיפון') || text.includes('צנרת')) {
+    attachments.push({
+      url: 'standards/sink_drain_1205.jpg',
+      title: 'תרשים תקן 1205 - ניקוז ודלוחין',
+      standard: '[תקן ישראלי 1205 חלק 2]'
+    });
+    attachments.push({
+      url: 'standards/pipe_standard_1205.jpg',
+      title: 'תקן 1205 - התקנת צנרת ביוב ומרווחים',
+      standard: '[תקן ישראלי 1205 חלק 3]'
+    });
+  }
+
+  if (text.includes('שרשורי') || text.includes('צינור גמיש')) {
+    attachments.push({
+      url: 'standards/corrugated_sink_attachment.jpeg',
+      title: 'ת"י 1205 חלק 2 - איסור חיבור שרשורי בכיורים',
+      standard: '[תקן 1205 חלק 2]'
+    });
+  }
+
+  if (text.includes('1555') || text.includes('שיפוע') || text.includes('מרפסת') || text.includes('רטיבות') || text.includes('איטום')) {
+    attachments.push({
+      url: 'standards/t1555_3_balcony_slope.jpeg',
+      title: 'ת"י 1555 חלק 3 - שיפועי ניקוז במרפסות ובמשטחים מרוצפים',
+      standard: '[תקן ישראלי 1555]'
+    });
+  }
+
+  if (text.includes('ריצוף') || text.includes('אריח') || text.includes('חלול') || text.includes('פוגה') || text.includes('הדבקה')) {
+    attachments.push({
+      url: 'standards/t1555_3_sec5_2_hollow.jpeg',
+      title: 'ת"י 1555 חלק 3 - בדיקת אריחים חלולים ופוגות',
+      standard: '[תקן ישראלי 1555]'
+    });
+    attachments.push({
+      url: 'standards/t1555_3_table_3_hollow.jpeg',
+      title: 'ת"י 1555 - טבלה 3: מרווחי מישקים מותרים',
+      standard: '[תקן ישראלי 1555]'
+    });
+  }
+
+  if (text.includes('כביסה') || text.includes('מכונת כביסה')) {
+    attachments.push({
+      url: 'standards/t1205_3_washing_height.png',
+      title: 'ת"י 1205 חלק 3 - גובה תקני לנקז מכונת כביסה',
+      standard: '[תקן ישראלי 1205]'
+    });
+  }
+
+  if (text.includes('דוד') || text.includes('טמפרטורה') || text.includes('מים חמים')) {
+    attachments.push({
+      url: 'standards/t1205_1_temp_limit.png',
+      title: 'ת"י 1205 חלק 1 - הגבלת טמפרטורת אספקת מים חמים',
+      standard: '[תקן ישראלי 1205]'
+    });
+  }
+
+  return attachments;
+}
+
+// APPLY COMPLETE SET: ליקוי X = תקן Y = נספחים Z
+function applyFindingSet(f, stdText) {
+  closeSelectFindingModal();
+
+  activeFindingIndex = -1; // new item
+  document.getElementById('edit-modal-title').textContent = 'ערוך ממצא';
+  document.getElementById('form-item-title').value = f.name || '';
+  document.getElementById('form-item-std').value = stdText || f.std || '';
+  document.getElementById('form-item-rec').value = f.rec || 'פירוק והתקנה מחדש בהתאם להוראות התקן והיצרן';
+  document.getElementById('form-item-note').value = f.note || ('פרק: ' + (pickerSelectedChapter || f.cat || 'כללי'));
+  document.getElementById('form-item-price').value = f.price || 450;
+  document.getElementById('form-item-qty').value = 1;
+  document.getElementById('form-item-unit').value = "קומפ'";
+
+  calculateModalTotal();
+
+  // Reset photos
+  currentModalPhotos = [];
+  renderModalPhotos();
+
+  // Auto-attach matching official standards diagrams (נספחים)
+  currentModalAttachments = getMatchingStandardsAttachments(f.name, stdText || f.std);
+  renderModalAttachments();
+
+  const editModal = document.getElementById('modal-edit-finding');
+  if (editModal) {
+    editModal.style.display = 'flex';
+    editModal.classList.add('active');
+  }
+}
+
+function renderModalAttachments() {
+  const container = document.getElementById('form-attachments-grid');
+  const badge = document.getElementById('attachments-count-badge');
+  if (badge) badge.textContent = currentModalAttachments.length + ' נספחים';
+  if (!container) return;
+
+  if (currentModalAttachments.length === 0) {
+    container.innerHTML = '<div style="font-size:0.8rem; color:#94a3b8; padding:6px 0;">אין עדיין נספחים מצורפים לממצא זה.</div>';
+    return;
+  }
+
+  container.innerHTML = currentModalAttachments.map((att, idx) => {
+    return '<div class="rep-attachment-row">' +
+      '<button type="button" class="rep-attachment-del" onclick="deleteModalAttachment(' + idx + ')" title="הסר נספח">✕</button>' +
+      '<div class="rep-attachment-info">' +
+        '<div class="rep-attachment-title">' + escapeHtml(att.title) + '</div>' +
+        '<div class="rep-attachment-sub">' + escapeHtml(att.standard || '') + '</div>' +
+      '</div>' +
+      '<img src="' + att.url + '" class="rep-attachment-thumb" alt="נספח">' +
+    '</div>';
+  }).join('');
+}
+
+function deleteModalAttachment(idx) {
+  currentModalAttachments.splice(idx, 1);
+  renderModalAttachments();
+}
+
+function addManualAttachmentPrompt() {
+  const title = prompt('הזן כותרת לנספח / תרשים תקן:', '[תקן ישראלי] תרשים תקן רשמי');
+  if (title) {
+    currentModalAttachments.push({
+      url: 'standards/sink_drain_1205.jpg',
+      title: title,
+      standard: '[תקן רשמי]'
+    });
+    renderModalAttachments();
   }
 }
